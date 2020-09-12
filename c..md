@@ -40,3 +40,5 @@ print "hello"
 print 'hello'
 ```
 Will quote them, but with which?
+
+Should `x` be a specially parsed thing? Should variables be prefixed? If they're not prefixed, how are calls and variables distinguished?
