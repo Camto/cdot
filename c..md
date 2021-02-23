@@ -5,21 +5,23 @@ Names can't have numbers, those would just be... numbers
 Functions definition
 
 ```
-fn fact ,.1..? . prod,. map fact 1..10
-fn fact (.1..? . prod) . map fact 1..10
+fn fact ,1..? . prod,. map fact 1..10
+fn fact (1..? . prod). map fact 1..10
 fn fact {1..? | prod}; map fact 1..10
 ```
 
 `gsub` as a sort of method
 
 ```
-fn disemvowel ,.gsub '[AEIOUaeiou]' '',
+fn disemvowel ,gsub '[AEIOUaeiou]' '',
 fn disemvowel {gsub '[AEIOUaeiou]' ''}
 
 'vowels exist'.gsub '[AEIOUaeiou]' ''
 'vowels exist'.disemvowel
 'vowels exist' | gsub '[AEIOUaeiou]' ''
 'vowels exist' | disemvowel
+gsub '[AEIOUaeiou]' '' 'vowels exist'
+disemvowel 'vowels exist'
 ```
 
 Variables
@@ -31,6 +33,13 @@ x is 4
 
 list is ls 1 2 3. new_list is map p1 list. join ' ' new_list
 list = [1 2 3]; new_list = map +1 list; join ' ' new_list
+```
+
+Multiple assignment
+
+```
+fn fib n ,a b is 0 1. repeat n (a b now b a p b). a,. map fib 0..9
+fn fib n {a b = 0 1; repeat n {a b = b (a + b)} | a}; map fib 0..9
 ```
 
 Currying
