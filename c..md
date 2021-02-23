@@ -32,7 +32,7 @@ x is 4
 4. x is
 
 list is ls 1 2 3. new_list is map p1 list. join ' ' new_list
-list = [1 2 3]; new_list = map +1 list; join ' ' new_list
+list := [1 2 3]; new_list := map +1 list; join ' ' new_list
 ```
 
 Multiple assignment
@@ -62,7 +62,7 @@ Lambda
 
 ```
 fact is ,.1..? . prod,. print ,map fact 1..10,. print ,call fact 5,
-fact = {1..? | prod}; print (map fact 1..10) | print (call fact 5)
+fact := {1..? | prod}; print (map fact 1..10) | print (call fact 5)
 ```
 
 Easter egg(s)
