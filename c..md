@@ -58,6 +58,13 @@ ret fact. map 1..10
 tup fact. map 1..10
 ```
 
+Lambda
+
+```
+fact is ,.1..? . prod,. print ,map fact 1..10,. print ,call fact 5,
+fact = {1..? | prod}; print (map fact 1..10) | print (call fact 5)
+```
+
 Easter egg(s)
 
 ```
