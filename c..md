@@ -59,8 +59,8 @@ Currying
 
 ```
 calc= 1 5 .. 1 $* fold
-c. fold .t. 1 1..5
-c. fold (*) 1 1..5
+c. fold \t 1 1..5
+c. fold \* 1 1..5
 ```
 
 Returning a function by name in a non obvious way
@@ -106,6 +106,22 @@ def map(callback, list):
 	for v in list:
 		new_list.append(callback(v))
 	return new_list
+```
+
+Random tests
+
+```
+calc= 1 10 .. $odd filter 0 $+ fold
+c. 1..10, filter \odd, sum
+c. 1..10, filter \odd, fold \+ 0
+
+calc= {w h -> w 2 * h 2 * +}
+calc= {2 * swap 2 * +}
+c. .args w h, w * 2 + h * 2.
+c. .? * 2 + ?? * 2.
+
+calc= pythagoras = {x = dup fst ; y = snd ; x 2 ^ y 2 ^ + sqrt} ; "pythagoras of [3, 4] is" [3, 4] pythagoras "pythagoras of [5, 12] is" [5, 12] pythagoras
+c. fn pythsgoras ls x y .sqrt x^2 + y^2., "pythagoras of [3 4] is" [3 4] pythagoras "pythagoras of [5 12] is" [5 12] pythagoras
 ```
 
 Easter egg(s)
