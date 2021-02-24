@@ -117,8 +117,8 @@ c. 1..10, filter \odd, fold \+ 0
 
 calc= {w h -> w 2 * h 2 * +}
 calc= {2 * swap 2 * +}
-c. .args w h, w * 2 + h * 2.
-c. .? * 2 + ?? * 2.
+c. .,args w h, w * 2 + h * 2.
+c. .,? * 2 + ?? * 2.
 
 calc= pythagoras = {x = dup fst ; y = snd ; x 2 ^ y 2 ^ + sqrt} ; "pythagoras of [3, 4] is" [3, 4] pythagoras "pythagoras of [5, 12] is" [5, 12] pythagoras
 c. fn pythsgoras ls x y .sqrt x^2 + y^2., "pythagoras of [3 4] is" pythagoras [3 4] "pythagoras of [5 12] is" pythagoras [5 12]
