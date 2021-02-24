@@ -37,8 +37,19 @@ list = [1 2 3]; new_list = map +1 list; join ' ' new_list
 Multiple assignment
 
 ```
-fn fib n (a b is 0 1. repeat ,n, ,a b set b a p b,. a). map $fib 0..9
-fn fib n (a b = 0 1; repeat (n) (a b <- b (a + b)); a); map \fib 0..9
+fn fib n (a b is 0 1. repeat n ,a b set b a p b,. a). map $fib 0..9
+fn fib n (a b = 0 1; repeat n (a b <- b (a + b)); a); map \fib 0..9
+
+fn fib n (0 1. repeat n ,store a b. b  a p b,. const); map \fib 0..9
+
+fn fib n (
+	0 1
+	| repeat n (store a b; b (a + b))
+	| store a _;
+	a
+);
+
+map \fib 0..9
 ```
 
 Currying
