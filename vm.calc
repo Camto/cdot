@@ -1,0 +1,112 @@
+calc=
+vm_ip = 0; vm_stack = []; vm_reg_a = 0; vm_reg_b = 0;
+
+PUSH = 0; POP = 1; ADD = 2; SUB = 4; R_INC = 5; R_DEC = 7; MUL = 8; DIV = 9; JMP = 10; JZ = 11; MOV = 12; R_PUSH = 13;
+REG_A = 0; REG_B = 1;
+code = [PUSH, 3, PUSH, REG_A, MOV, PUSH, REG_A, R_INC, PUSH, REG_A, R_PUSH];
+
+get_byte = { code vm_ip nth };
+vm_pop_stack = { $vm_stack (vm_stack init) set };
+vm_push_stack = { value -> $vm_stack (vm_stack value +) set };
+
+vm_do_instr = {
+    get_byte PUSH = {
+        $vm_ip inc
+        get_byte vm_push_stack
+    } {
+    get_byte POP = {
+        vm_pop_stack
+    } {
+    get_byte ADD = {
+        x = vm_stack last;
+        y =
+          vm_pop_stack
+          vm_stack last;
+        vm_pop_stack
+        $vm_stack (x y + vm_stack +) set
+    } {
+    get_byte SUB = {
+        x = vm_stack last;
+        y =
+          vm_pop_stack
+          set vm_stack last;
+        vm_pop_stack
+        $vm_stack (x y - vm_stack +) set
+    } {
+    get_byte R_INC = {
+        x = vm_stack last;
+        vm_pop_stack
+        x { $vm_reg_b inc } { $vm_reg_a inc } if
+    } {
+    get_byte R_DEC = {
+        x = vm_stack last;
+        vm_pop_stack
+        x { $vm_reg_b dec } { $vm_reg_a dec } if
+    } {
+    get_byte MUL = {
+        x = vm_stack last;
+        y =
+          vm_pop_stack
+          vm_stack last;
+        vm_pop_stack
+        $vm_stack (x y * vm_stack +) set
+    } {
+    get_byte DIV = {
+        x = vm_stack last;
+        y =
+          vm_pop_stack
+          vm_stack last;
+        vm_pop_stack
+        $vm_stack (y x / vm_stack +) set
+    } {
+    get_byte JMP = {
+        x = vm_stack last;
+        $vm_ip inc
+        vm_pop_stack
+        $vm_ip (x 1 -) set
+    } {
+    get_byte JZ = {
+        vm_reg_a {} {
+            x = vm_stack last;
+            $vm_ip inc
+            vm_pop_stack
+            $vm_ip (x 1 -) set
+        } if
+    } {
+    get_byte MOV = {
+        x = vm_stack last;
+        y =
+          vm_pop_stack
+          vm_stack last;
+        vm_pop_stack
+        x { $vm_reg_b y set } { $vm_reg_a y set } if
+    } {
+    get_byte R_PUSH = {
+        x = vm_stack last;
+        vm_pop_stack
+        x { vm_reg_b vm_push_stack } { vm_reg_a vm_push_stack } if
+    } {
+
+    } if
+    } if
+    } if
+    } if
+    } if
+    } if
+    } if
+    } if
+    } if
+    } if
+    } if
+    } if
+    $vm_ip inc
+};
+
+vm_exec = {
+  vm_do_instr
+  vm_ip (code length) = {} { vm_exec } if
+};
+
+vm_exec
+
+ "\nVM State\n- Stack = " vm_stack "\n- Register A = " vm_reg_a "\n- Register B = " vm_reg_b
