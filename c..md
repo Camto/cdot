@@ -37,8 +37,8 @@ list = [1 2 3]; new_list = map +1 list; join ' ' new_list
 Multiple assignment
 
 ```
-fn fib n (a b is 0 1. repeat ,n, ,a b set ls b a p b,. a). map $fib 0..9
-fn fib n (a b = 0 1; repeat (n) (a b <- [b (a + b))]; a); map \fib 0..9
+fn fib n (a b is 0 1. repeat ,n, ,a b set b a p b,. a). map $fib 0..9
+fn fib n (a b = 0 1; repeat (n) (a b <- b (a + b)); a); map \fib 0..9
 ```
 
 Currying
@@ -61,17 +61,17 @@ Lambda
 
 ```
 fact is ,.1..q . prod,. print map fact 1..10. print call fact 5
-fact := {1..? | prod}; print map fact 1..10 | print call fact 5
+fact := {1..? | prod}; print map fact 1..10; print call fact 5
 ```
 
 Complex example
 
 ```
-fn map cb list (new is ls. for v ,list, ,append \new call cb v,. new)
+fn map cb list (new is ls. for v list ,append \new call cb v,. new)
 
 fn map callback list (
 	letnew_list = [];
-	for v (list) (
+	for v list (
 		append \new_list call callback v
 	);
 	new_list
@@ -101,7 +101,7 @@ rps 'r'
 eightball 'will i die tomorrow?'
 ```
 
-## More than contextful
+## Don't go for depth
 
 Names can't have numbers, those would just be... numbers
 
@@ -142,7 +142,7 @@ Multiple assignment
 
 ```
 fn fib n ,a b is 0 1. repeat n (a b now b a p b). a,. map fib 0..9
-fn fib n (a b = 0 1; repeat n (a b = b (a + b)) | a); map fib 0..9
+fn fib n (a b = 0 1; repeat n (a b = b (a + b)); a); map fib 0..9
 ```
 
 Currying
@@ -165,7 +165,7 @@ Lambda
 
 ```
 fact is ,.1..? . prod,. print ,map fact 1..10,. print ,call fact 5,
-fact := {1..? | prod}; print (map fact 1..10) | print (call fact 5)
+fact := {1..? | prod}; print (map fact 1..10); print (call fact 5)
 ```
 
 Easter egg(s)
