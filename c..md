@@ -78,12 +78,12 @@ fact := {1..? | prod}; print map fact 1..10; print call fact 5
 Complex example
 
 ```
-fn map cb list (new is ls. for v list ,append \new call cb v,. new)
+fn map cb list (new is ls. for v list ,push \new call cb v,. new)
 
 fn map callback list (
 	letnew_list = [];
 	for v list (
-		append \new_list call callback v
+		push \new_list call callback v
 	);
 	new_list
 )
