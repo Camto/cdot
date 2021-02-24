@@ -6,7 +6,7 @@ Functions definition
 
 ```
 fn fact .1..q, prod., map $fact 1..10
-fn fact (1..?, prod); map \fact 1..10
+fn fact (1..?, prod), map \fact 1..10
 ```
 
 `gsub` as a sort of method
@@ -31,7 +31,7 @@ x is 4
 1, x is
 
 list is ls 1 2 3, new_list is map p1 list, join ' ' new_list
-list = [1 2 3]; new_list = map +1 list; join ' ' new_list
+list = [1 2 3], new_list = map +1 list, join ' ' new_list
 ```
 
 Multiple assignment
@@ -41,16 +41,16 @@ fn fib n (a b is 0 1, repeat n .a b set b  a p b., a), map $fib 0..9
 
 fn fib n (a b is 0 1. repeat n ,a b set b  a p b,. a). map $fib 0..9
 
-fn fib n (a b = 0 1; repeat n (a b <- b (a + b)); a); map \fib 0..9
+fn fib n (a b = 0 1, repeat n (a b <- b (a + b)), a), map \fib 0..9
 
-fn fib n (0 1, repeat n .store a b, b  a p b., const); map \fib 0..9
+fn fib n (0 1, repeat n .store a b, b  a p b., const), map \fib 0..9
 
 fn fib n (
 	0 1
-	| repeat n (store a b; b (a + b))
-	| store a _;
+	| repeat n (store a b, b (a + b))
+	| store a _,
 	a
-);
+),
 
 map \fib 0..9
 ```
@@ -75,7 +75,7 @@ Lambda
 
 ```
 fact is .,1..q, prod., print map fact 1..10, print call fact 5
-fact := {1..? | prod}; print map fact 1..10; print call fact 5
+fact := {1..? | prod}, print map fact 1..10, print call fact 5
 ```
 
 Complex example
@@ -84,14 +84,14 @@ Complex example
 fn map cb list (new is ls, for v list .push \new call cb v., new)
 
 fn map callback list (
-	letnew_list = [];
+	letnew_list = [],
 	for v list (
 		push \new_list call callback v
-	);
+	),
 	new_list
 )
 
-map = (cb, ls) => {let new = []; for(let v of ls) new.push(cb(v)); return new}
+map = (cb, ls) => {let new = [], for(let v of ls) new.push(cb(v)), return new}
 
 function map(callback, list) {
 	let new_list = []
@@ -124,7 +124,7 @@ Functions definition
 ```
 fn fact .1..?, prod., map fact 1..10
 fn fact (1..?, prod), map fact 1..10
-fn fact (1..? | prod); map fact 1..10
+fn fact (1..? | prod), map fact 1..10
 ```
 
 `gsub` as a sort of method
@@ -149,14 +149,14 @@ x is 4
 4, x is
 
 list is ls 1 2 3, new_list is map p1 list, join ' ' new_list
-list := [1 2 3]; new_list := map +1 list; join ' ' new_list
+list := [1 2 3], new_list := map +1 list, join ' ' new_list
 ```
 
 Multiple assignment
 
 ```
 fn fib n .a b is 0 1, repeat n (a b now b a p b), a., map fib 0..9
-fn fib n (a b = 0 1; repeat n (a b = b (a + b)); a); map fib 0..9
+fn fib n (a b = 0 1, repeat n (a b = b (a + b)), a), map fib 0..9
 ```
 
 Currying
@@ -179,7 +179,7 @@ Lambda
 
 ```
 fact is .,1..?, prod., print .map fact 1..10., print .call fact 5.
-fact := {1..? | prod}; print (map fact 1..10); print (call fact 5)
+fact := {1..? | prod}, print (map fact 1..10), print (call fact 5)
 ```
 
 Easter egg(s)
