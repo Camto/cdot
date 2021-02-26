@@ -96,7 +96,7 @@ function parse_cdot(tokens) {
 				i < tokens.length &&
 				["=", "<-"].includes(tokens[i].type)) {
 			var_op = tokens[i].type;
-			tokens.slice(0, i + 1);
+			tokens.splice(0, i + 1);
 		}
 		
 		let func = "id";
@@ -115,8 +115,8 @@ function parse_cdot(tokens) {
 	}
 	
 	function parse_vars(in_semiparens) {
-		let vars, i;
-		for(i = 0; !done(in_semiparens, i); i++) {
+		let vars = [];
+		for(var i = 0; !done(in_semiparens, i); i++) {
 			let token = tokens[i];
 			if(token.type == "id") {
 				if(token.data == "ls") {
@@ -163,7 +163,7 @@ function parse_cdot(tokens) {
 	}
 	
 	function parse_var_list(in_semiparens, i) {
-		let vars;
+		let vars = [];
 		for(; !done(in_semiparens, i); i++) {
 			let token = tokens[i];
 			if(token.type == "id") {
@@ -207,11 +207,11 @@ function parse_cdot(tokens) {
 			}
 		}
 		
-		return {vars, i};
+		return {var_list: vars, i};
 	}
 	
 	function parse_var_dict(in_semiparens, i) {
-		let vars;
+		let vars = [];
 		for(; !done(in_semiparens, i); i++) {
 			let token = tokens[i];
 			if(token.type == "id") {
@@ -225,7 +225,7 @@ function parse_cdot(tokens) {
 			}
 		}
 		
-		return {vars, i};
+		return {var_dict: vars, i};
 	}
 	
 	function parse_args(in_semiparens) {
@@ -437,7 +437,7 @@ function parse_cdot(tokens) {
 //tokens = [{type: "id", data: "print"}, {type: "id", data: "sqrt"}, {type: "num", data: 4}];
 
 // .,args x y, x + y.
-tokens = [{type: "."}, {type: ","}, {type: "args"}, {type: "id", data: "x"}, {type: "id", data: "y"}, {type: ","}, {type: "num", data: "x"}, {type: "+"}, {type: "num", data: "y"}, {type: "."}];
+tokens = [{type: "."}, {type: ","}, {type: "id", data: "ls"}, {type: "id", data: "x"}, {type: "id", data: "y"}, {type: "="}, {type: ","}, {type: "num", data: "x"}, {type: "+"}, {type: "num", data: "y"}, {type: "."}];
 
 //tokens = "+".split(".(..).").map(type => ({type}));
 
