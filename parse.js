@@ -27,10 +27,11 @@ let find_highest_prec_op = stuff =>
 
 function parse_cdot(tokens) {
 	// Nested lists dude, empty if nothing maybe
-	let bound = [{id: "sqrt", kind: "func"}, {id: "map", kind: "func"}, {id: "prod", kind: "func"}, {id: "fact", kind: "func"}, {id: "print", kind: "func"}];
+	let bound = [{id: "add", kind: "func"}, {id: "ls", kind: "func"}, {id: "sqrt", kind: "func"}, {id: "map", kind: "func"}, {id: "prod", kind: "func"}, {id: "fact", kind: "func"}, {id: "print", kind: "func"}];
 	
 	let find_bound_named = id =>
-		bound.find(var_or_func => var_or_func.id == id);
+		bound.flat().find(var_or_func => var_or_func.id == id) ||
+		(() => {throw "not a name, bro"})();
 	
 	function done(in_semiparens, i = 0) {
 		if(tokens.length <= i) return true;
@@ -66,8 +67,6 @@ function parse_cdot(tokens) {
 	function parse_pipe_section(in_semiparens) {
 		let first = tokens.shift();
 		switch(first.type) {
-			case ",": return "empty section";
-			
 			case "fn": return parse_fn(in_semiparens);
 			case "=": throw "= before any var names";
 			case "<-": throw "<- before any var names";
@@ -89,7 +88,7 @@ function parse_cdot(tokens) {
 	}
 	
 	function parse_normal(in_semiparens) {
-		let {vars, i} = parse_vars(in_semiparens);
+		let {vars, i} = lookahead_vars(in_semiparens);
 		let var_op;
 		if(
 				vars &&
@@ -115,6 +114,12 @@ function parse_cdot(tokens) {
 	}
 	
 	function parse_vars(in_semiparens) {
+		let {vars, i} = lookahead_vars(in_semiparens);
+		tokens.splice(0, i);
+		return vars;
+	}
+	
+	function lookahead_vars(in_semiparens) {
 		let vars = [];
 		for(var i = 0; !done(in_semiparens, i); i++) {
 			let token = tokens[i];
@@ -122,13 +127,13 @@ function parse_cdot(tokens) {
 				if(token.data == "ls") {
 					i++;
 					let var_list;
-					({var_list, i} = parse_var_list(in_semiparens, i));
+					({var_list, i} = lookahead_var_list(in_semiparens, i));
 					vars.push({kind: "list", data: var_list});
 					i--;
 				} else if(token.data == "dict") {
 					i++;
 					let var_dict;
-					({var_dict, i} = parse_var_dict(in_semiparens, i));
+					({var_dict, i} = lookahead_var_dict(in_semiparens, i));
 					vars.push({kind: "dict", data: var_dict});
 					i--;
 				} else {
@@ -137,7 +142,7 @@ function parse_cdot(tokens) {
 			} else if(token.type == "[") {
 				i++;
 				let var_list;
-				({var_list, i} = parse_var_list(in_semiparens, i));
+				({var_list, i} = lookahead_var_list(in_semiparens, i));
 				if(
 						!var_list ||
 						i >= tokens.length ||
@@ -147,7 +152,7 @@ function parse_cdot(tokens) {
 			} else if(token.type == "{") {
 				i++;
 				let var_dict;
-				({var_dict, i} = parse_var_dict(in_semiparens, i));
+				({var_dict, i} = lookahead_var_dict(in_semiparens, i));
 				if(
 						!var_dict ||
 						i >= tokens.length ||
@@ -162,7 +167,7 @@ function parse_cdot(tokens) {
 		return {vars, i};
 	}
 	
-	function parse_var_list(in_semiparens, i) {
+	function lookahead_var_list(in_semiparens, i) {
 		let vars = [];
 		for(; !done(in_semiparens, i); i++) {
 			let token = tokens[i];
@@ -170,13 +175,13 @@ function parse_cdot(tokens) {
 				if(token.data == "ls") {
 					i++;
 					let var_list;
-					({var_list, i} = parse_var_list(in_semiparens, i));
+					({var_list, i} = lookahead_var_list(in_semiparens, i));
 					vars.push({kind: "list", data: var_list});
 					i--;
 				} else if(token.data == "dict") {
 					i++;
 					let var_dict;
-					({var_dict, i} = parse_var_dict(in_semiparens, i));
+					({var_dict, i} = lookahead_var_dict(in_semiparens, i));
 					vars.push({kind: "dict", data: var_dict});
 					i--;
 				} else {
@@ -185,7 +190,7 @@ function parse_cdot(tokens) {
 			} else if(token.type == "[") {
 				i++;
 				let var_list;
-				({var_list, i} = parse_var_list(in_semiparens, i));
+				({var_list, i} = lookahead_var_list(in_semiparens, i));
 				if(
 						!var_list ||
 						i >= tokens.length ||
@@ -195,7 +200,7 @@ function parse_cdot(tokens) {
 			} else if(token.type == "{") {
 				i++;
 				let var_dict;
-				({var_dict, i} = parse_var_dict(in_semiparens, i));
+				({var_dict, i} = lookahead_var_dict(in_semiparens, i));
 				if(
 						!var_dict ||
 						i >= tokens.length ||
@@ -210,7 +215,7 @@ function parse_cdot(tokens) {
 		return {var_list: vars, i};
 	}
 	
-	function parse_var_dict(in_semiparens, i) {
+	function lookahead_var_dict(in_semiparens, i) {
 		let vars = [];
 		for(; !done(in_semiparens, i); i++) {
 			let token = tokens[i];
@@ -282,7 +287,7 @@ function parse_cdot(tokens) {
 				if(is_func)
 					tokens.shift();
 				
-				let parse = parse_rec(false, "(");
+				let parse = parse_rec(false);
 				
 				if(tokens.length > 0 && tokens[0].type == ")")
 					tokens.shift();
@@ -292,7 +297,7 @@ function parse_cdot(tokens) {
 				return {msg: "it parens", is_func, data: parse};
 			}
 			case "[": {
-				let parse = parse_rec(false, "[");
+				let parse = parse_rec(false);
 				
 				if(tokens.length > 0 && tokens[0].type == "]")
 					tokens.shift();
@@ -302,7 +307,7 @@ function parse_cdot(tokens) {
 				return {msg: "it list", data: parse};
 			}
 			case "{": {
-				let parse = parse_rec(false, "{");
+				let parse = parse_rec(false);
 				
 				if(tokens.length > 0 && tokens[0].type == "}")
 					tokens.shift();
@@ -313,20 +318,19 @@ function parse_cdot(tokens) {
 			}
 			case ".": {
 				if(in_semiparens) throw "how?";
-				else {
-					let is_func = tokens.length > 0 && tokens[0].type == ",";
-					if(is_func)
-						tokens.shift();
-					
-					let parse = parse_rec(true, ".");
-					
-					if(tokens.length > 0 && tokens[0].type == ".")
-						tokens.shift();
-					else
-						throw "terminated . with wrong thing";
-					
-					return {msg: "it semi(", is_func, data: parse};
-				}
+				
+				let is_func = tokens.length > 0 && tokens[0].type == ",";
+				if(is_func)
+					tokens.shift();
+				
+				let parse = parse_rec(true);
+				
+				if(tokens.length > 0 && tokens[0].type == ".")
+					tokens.shift();
+				else
+					throw "terminated . with wrong thing";
+				
+				return {msg: "it semi(", is_func, data: parse};
 			}
 			case ")": throw "unexpected )";
 			case "]": throw "unexpected ]";
@@ -386,12 +390,48 @@ function parse_cdot(tokens) {
 	}
 	
 	function parse_fn(in_semiparens) {
+		if(tokens.length < 0 || tokens[0].type != "id")
+			throw "fn got no name";
 		
+		let name = tokens.shift().data;
+		
+		let args = parse_vars(in_semiparens);
+		if(
+				done(in_semiparens) ||
+				!["(", "."].includes(tokens[0].type))
+			throw "no fn body bro";
+		
+		let open = tokens.shift().type;
+		
+		if(tokens.length > 0 && tokens[0].type == ",")
+			throw "nuh uh fn ain't use no lambda";
+		
+		let body;
+		if(open == "(") {
+			body = parse_rec(false);
+			
+			if(tokens.length > 0 && tokens[0].type == ")")
+				tokens.shift();
+			else
+				throw "terminated ( with wrong thing";
+		} else if(open == ".") {
+			if(in_semiparens) throw "how?";
+			
+			body = parse_rec(true);
+			
+			if(tokens.length > 0 && tokens[0].type == ".")
+				tokens.shift();
+			else
+				throw "terminated . with wrong thing";
+		} else {
+			throw "how?";
+		}
+		
+		return {kind: "func", name, args, body};
 	}
 	
 	function parse_store(in_semiparens) {
-		let {vars, i} = parse_vars(in_semiparens);
-		tokens.splice(0, i);
+		let vars = parse_vars(in_semiparens);
 		if(!done(in_semiparens))
 			throw "more stuff after store/args?";
 		
@@ -421,8 +461,8 @@ function parse_cdot(tokens) {
 	return parse_rec(false);
 }
 
-// fact = .,1..?, prod., map $fact 1..10
-//tokens = [{type: "id", data: "fact"}, {type: "="}, {type: "."}, {type: ","}, {type: "num", data: 1}, {type: ".."}, {type: "?"}, {type: ","}, {type: "id", data: "prod"}, {type: "."}, {type: ","}, {type: "id", data: "map"}, {type: "$"}, {type: "id", data: "fact"}, {type: "num", data: 1}, {type: ".."}, {type: "num", data: 10}];
+// fn fact .1..?, prod., map $fact 1..10
+//tokens = [{type: "fn"}, {type: "id", data: "fact"}, {type: "."}, {type: "num", data: 1}, {type: ".."}, {type: "?"}, {type: ","}, {type: "id", data: "prod"}, {type: "."}, {type: ","}, {type: "id", data: "map"}, {type: "$"}, {type: "id", data: "fact"}, {type: "num", data: 1}, {type: ".."}, {type: "num", data: 10}];
 
 // c q <- sqrt x^2 + y^2
 //tokens = [{type: "id", data: "c"}, {type: "id", data: "q"}, {type: "<-"}, {type: "id", data: "sqrt"}, {type: "num", data: "x"}, {type: "^"}, {type: "num", data: 2}, {type: "+"}, {type: "num", data: "y"}, {type: "^"}, {type: "num", data: 2}];
@@ -433,8 +473,13 @@ function parse_cdot(tokens) {
 // print sqrt 4
 //tokens = [{type: "id", data: "print"}, {type: "id", data: "sqrt"}, {type: "num", data: 4}];
 
-// .,args x y, x + y.
-tokens = [{type: "."}, {type: ","}, {type: "store"}, {type: "id", data: "ls"}, {type: "id", data: "x"}, {type: "id", data: "y"}, {type: ","}, {type: "num", data: "x"}, {type: "+"}, {type: "num", data: "y"}, {type: "."}];
+// .,args ls x y, x + y.
+//tokens = [{type: "."}, {type: ","}, {type: "store"}, {type: "id", data: "ls"}, {type: "id", data: "x"}, {type: "id", data: "y"}, {type: ","}, {type: "num", data: "x"}, {type: "+"}, {type: "num", data: "y"}, {type: "."}];
+
+// fn add [x y] .x + y., add ls 3 4
+tokens = [{type: "fn"}, {type: "id", data: "add"}, {type: "["}, {type: "id", data: "x"}, {type: "id", data: "y"}, {type: "]"}, {type: "."}, {type: "num", data: "x"}, {type: "+"}, {type: "num", data: "y"}, {type: "."}, {type: ","}, {type: "id", data: "add"}, {type: "id", data: "ls"}, {type: "num", data: "3"}, {type: "num", data: "4"}];
+
+//tokens = [{type: ","}];
 
 //tokens = "+".split(".(..).").map(type => ({type}));
 
