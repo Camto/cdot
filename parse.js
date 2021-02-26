@@ -390,13 +390,10 @@ function parse_cdot(tokens) {
 	}
 	
 	function parse_store(in_semiparens) {
-		let vars = [];
-		while(!done(in_semiparens)) {
-			if(tokens[0].type == "id")
-				vars.push(tokens.shift().data);
-			else
-				throw "Non-id in store/args";
-		}
+		let {vars, i} = parse_vars(in_semiparens);
+		tokens.splice(0, i);
+		if(!done(in_semiparens))
+			throw "more stuff after store/args?";
 		
 		return {kind: "store", vars};
 	}
@@ -437,7 +434,7 @@ function parse_cdot(tokens) {
 //tokens = [{type: "id", data: "print"}, {type: "id", data: "sqrt"}, {type: "num", data: 4}];
 
 // .,args x y, x + y.
-tokens = [{type: "."}, {type: ","}, {type: "id", data: "ls"}, {type: "id", data: "x"}, {type: "id", data: "y"}, {type: "="}, {type: ","}, {type: "num", data: "x"}, {type: "+"}, {type: "num", data: "y"}, {type: "."}];
+tokens = [{type: "."}, {type: ","}, {type: "store"}, {type: "id", data: "ls"}, {type: "id", data: "x"}, {type: "id", data: "y"}, {type: ","}, {type: "num", data: "x"}, {type: "+"}, {type: "num", data: "y"}, {type: "."}];
 
 //tokens = "+".split(".(..).").map(type => ({type}));
 
