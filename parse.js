@@ -27,10 +27,10 @@ let find_highest_prec_op = stuff =>
 
 function parse_cdot(tokens) {
 	// Nested lists dude, empty if nothing maybe
-	let bound = [{id: "add", kind: "func"}, {id: "ls", kind: "func"}, {id: "sqrt", kind: "func"}, {id: "map", kind: "func"}, {id: "prod", kind: "func"}, {id: "fact", kind: "func"}, {id: "print", kind: "func"}];
+	let bound = [[{id: "ls", kind: "func"}, {id: "sqrt", kind: "func"}, {id: "map", kind: "func"}, {id: "prod", kind: "func"}, {id: "fact", kind: "func"}, {id: "print", kind: "func"}]];
 	
 	let find_bound_named = id =>
-		bound.flat().find(var_or_func => var_or_func.id == id) ||
+		bound.flat().find(var_or_func => var_or_func.id == id).kind ||
 		(() => {throw "not a name, bro"})();
 	
 	function done(in_semiparens, i = 0) {
@@ -43,6 +43,8 @@ function parse_cdot(tokens) {
 	}
 	
 	function parse_rec(in_semiparens) {
+		bound.unshift([]);
+		
 		let pipe_sections = [];
 		let curr_section = [];
 		
@@ -61,6 +63,8 @@ function parse_cdot(tokens) {
 		}
 		pipe_sections.push(curr_section);
 		
+		console.log(bound.shift());
+		
 		return pipe_sections;
 	}
 	
@@ -68,8 +72,6 @@ function parse_cdot(tokens) {
 		let first = tokens.shift();
 		switch(first.type) {
 			case "fn": return parse_fn(in_semiparens);
-			case "=": throw "= before any var names";
-			case "<-": throw "<- before any var names";
 			
 			case "store":
 			case "args":
@@ -88,7 +90,7 @@ function parse_cdot(tokens) {
 	}
 	
 	function parse_normal(in_semiparens) {
-		let {vars, i} = lookahead_vars(in_semiparens);
+		let {vars, declared, i} = lookahead_vars(in_semiparens);
 		let var_op;
 		if(
 				vars &&
@@ -96,13 +98,14 @@ function parse_cdot(tokens) {
 				["=", "<-"].includes(tokens[i].type)) {
 			var_op = tokens[i].type;
 			tokens.splice(0, i + 1);
+			bound[0] = declared.concat(bound[0]);
 		}
 		
 		let func = "id";
 		if(
 				tokens.length > 0 &&
 				tokens[0].type == "id" &&
-				find_bound_named(tokens[0].data).kind == "func")
+				find_bound_named(tokens[0].data) == "func")
 			func = tokens.shift().data;
 		
 		let args = parse_args(in_semiparens);
@@ -114,35 +117,39 @@ function parse_cdot(tokens) {
 	}
 	
 	function parse_vars(in_semiparens) {
-		let {vars, i} = lookahead_vars(in_semiparens);
+		let {vars, declared, i} = lookahead_vars(in_semiparens);
 		tokens.splice(0, i);
+		bound[0] = declared.concat(bound[0]);
 		return vars;
 	}
 	
 	function lookahead_vars(in_semiparens) {
 		let vars = [];
+		let declared = [];
+		
 		for(var i = 0; !done(in_semiparens, i); i++) {
 			let token = tokens[i];
 			if(token.type == "id") {
 				if(token.data == "ls") {
 					i++;
 					let var_list;
-					({var_list, i} = lookahead_var_list(in_semiparens, i));
+					({var_list, i} = lookahead_var_list());
 					vars.push({kind: "list", data: var_list});
 					i--;
 				} else if(token.data == "dict") {
 					i++;
 					let var_dict;
-					({var_dict, i} = lookahead_var_dict(in_semiparens, i));
+					({var_dict, i} = lookahead_var_dict());
 					vars.push({kind: "dict", data: var_dict});
 					i--;
 				} else {
 					vars.push({kind: "var", data: token.data});
+					declared.push(token.data);
 				}
 			} else if(token.type == "[") {
 				i++;
 				let var_list;
-				({var_list, i} = lookahead_var_list(in_semiparens, i));
+				({var_list, i} = lookahead_var_list());
 				if(
 						!var_list ||
 						i >= tokens.length ||
@@ -152,7 +159,7 @@ function parse_cdot(tokens) {
 			} else if(token.type == "{") {
 				i++;
 				let var_dict;
-				({var_dict, i} = lookahead_var_dict(in_semiparens, i));
+				({var_dict, i} = lookahead_var_dict());
 				if(
 						!var_dict ||
 						i >= tokens.length ||
@@ -164,73 +171,79 @@ function parse_cdot(tokens) {
 			}
 		}
 		
-		return {vars, i};
-	}
-	
-	function lookahead_var_list(in_semiparens, i) {
-		let vars = [];
-		for(; !done(in_semiparens, i); i++) {
-			let token = tokens[i];
-			if(token.type == "id") {
-				if(token.data == "ls") {
+		function lookahead_var_list() {
+			let vars = [];
+			for(; !done(in_semiparens, i); i++) {
+				let token = tokens[i];
+				if(token.type == "id") {
+					if(token.data == "ls") {
+						i++;
+						let var_list;
+						({var_list, i} = lookahead_var_list());
+						vars.push({kind: "list", data: var_list});
+						i--;
+					} else if(token.data == "dict") {
+						i++;
+						let var_dict;
+						({var_dict, i} = lookahead_var_dict());
+						vars.push({kind: "dict", data: var_dict});
+						i--;
+					} else {
+						vars.push({kind: "var", data: token.data});
+						declared.push(token.data);
+					}
+				} else if(token.type == "[") {
 					i++;
 					let var_list;
-					({var_list, i} = lookahead_var_list(in_semiparens, i));
+					({var_list, i} = lookahead_var_list());
+					if(
+							!var_list ||
+							i >= tokens.length ||
+							tokens[i].type != "]")
+						break;
 					vars.push({kind: "list", data: var_list});
-					i--;
-				} else if(token.data == "dict") {
+				} else if(token.type == "{") {
 					i++;
 					let var_dict;
-					({var_dict, i} = lookahead_var_dict(in_semiparens, i));
+					({var_dict, i} = lookahead_var_dict());
+					if(
+							!var_dict ||
+							i >= tokens.length ||
+							tokens[i].type != "}")
+						break;
 					vars.push({kind: "dict", data: var_dict});
-					i--;
 				} else {
-					vars.push({kind: "var", data: token.data});
+					break;
 				}
-			} else if(token.type == "[") {
-				i++;
-				let var_list;
-				({var_list, i} = lookahead_var_list(in_semiparens, i));
-				if(
-						!var_list ||
-						i >= tokens.length ||
-						tokens[i].type != "]")
-					break;
-				vars.push({kind: "list", data: var_list});
-			} else if(token.type == "{") {
-				i++;
-				let var_dict;
-				({var_dict, i} = lookahead_var_dict(in_semiparens, i));
-				if(
-						!var_dict ||
-						i >= tokens.length ||
-						tokens[i].type != "}")
-					break;
-				vars.push({kind: "dict", data: var_dict});
-			} else {
-				break;
 			}
+			
+			return {var_list: vars, i};
 		}
 		
-		return {var_list: vars, i};
-	}
-	
-	function lookahead_var_dict(in_semiparens, i) {
-		let vars = [];
-		for(; !done(in_semiparens, i); i++) {
-			let token = tokens[i];
-			if(token.type == "id") {
-				if(["ls", "dict"].includes(token.data == "ls")) {
-					break;
+		function lookahead_var_dict() {
+			let vars = [];
+			for(; !done(in_semiparens, i); i++) {
+				let token = tokens[i];
+				if(token.type == "id") {
+					if(["ls", "dict"].includes(token.data == "ls")) {
+						break;
+					} else {
+						vars.push({kind: "var", data: token.data});
+						declared.push(token.data);
+					}
 				} else {
-					vars.push({kind: "var", data: token.data});
+					break;
 				}
-			} else {
-				break;
 			}
+			
+			return {var_dict: vars, i};
 		}
 		
-		return {var_dict: vars, i};
+		return {
+			vars,
+			declared: declared.map(v => ({id: v, kind: "var"})),
+			i
+		};
 	}
 	
 	function parse_args(in_semiparens) {
@@ -269,11 +282,15 @@ function parse_cdot(tokens) {
 				return first;
 			
 			case "id":
-				return {
-					kind: "call",
-					func: first.data,
-					arg: parse_args(in_semiparens)
-				};
+				if(find_bound_named(first.data) == "var") {
+					return first;
+				} else {
+					return {
+						kind: "call",
+						func: first.data,
+						arg: parse_args(in_semiparens)
+					};
+				}
 			
 			case "$":
 				if(tokens.length > 0) {
@@ -394,6 +411,7 @@ function parse_cdot(tokens) {
 			throw "fn got no name";
 		
 		let name = tokens.shift().data;
+		bound[0].unshift({kind: "func", id: name});
 		
 		let args = parse_vars(in_semiparens);
 		if(
@@ -474,10 +492,10 @@ function parse_cdot(tokens) {
 //tokens = [{type: "id", data: "print"}, {type: "id", data: "sqrt"}, {type: "num", data: 4}];
 
 // .,args ls x y, x + y.
-//tokens = [{type: "."}, {type: ","}, {type: "store"}, {type: "id", data: "ls"}, {type: "id", data: "x"}, {type: "id", data: "y"}, {type: ","}, {type: "num", data: "x"}, {type: "+"}, {type: "num", data: "y"}, {type: "."}];
+tokens = [{type: "."}, {type: ","}, {type: "store"}, {type: "id", data: "ls"}, {type: "id", data: "x"}, {type: "id", data: "y"}, {type: ","}, {type: "id", data: "x"}, {type: "+"}, {type: "id", data: "y"}, {type: "."}];
 
 // fn add [x y] .x + y., add ls 3 4
-tokens = [{type: "fn"}, {type: "id", data: "add"}, {type: "["}, {type: "id", data: "x"}, {type: "id", data: "y"}, {type: "]"}, {type: "."}, {type: "num", data: "x"}, {type: "+"}, {type: "num", data: "y"}, {type: "."}, {type: ","}, {type: "id", data: "add"}, {type: "id", data: "ls"}, {type: "num", data: "3"}, {type: "num", data: "4"}];
+//tokens = [{type: "fn"}, {type: "id", data: "add"}, {type: "["}, {type: "id", data: "x"}, {type: "id", data: "y"}, {type: "]"}, {type: "."}, {type: "id", data: "x"}, {type: "+"}, {type: "id", data: "y"}, {type: "."}, {type: ","}, {type: "id", data: "add"}, {type: "id", data: "ls"}, {type: "num", data: "3"}, {type: "num", data: "4"}];
 
 //tokens = [{type: ","}];
 
