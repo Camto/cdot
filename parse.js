@@ -52,22 +52,13 @@ function parse_cdot(tokens) {
 		bound.unshift(new_scope);
 		
 		let pipe_sections = [];
-		let curr_section = [];
-		
 		while(
 				!done(in_semiparens) ||
 				tokens.length > 0 && tokens[0].type == ",") {
 			
-			if(tokens[0].type == ",") {
-				tokens.shift();
-				pipe_sections.push(curr_section);
-				curr_section = [];
-			} else {
-				// fix things not related to multiple return getting extra boxed
-				curr_section.push(parse_pipe_section(in_semiparens));
-			}
+			pipe_sections.push(parse_pipe_section(in_semiparens));
+			if(tokens.length > 0 && tokens[0].type == ",") tokens.shift();
 		}
-		pipe_sections.push(curr_section);
 		
 		bound.shift();
 		
@@ -514,7 +505,7 @@ function parse_cdot(tokens) {
 }
 
 // fn fact .1..?, prod., map $fact 1..10
-//tokens = [{type: "fn"}, {type: "name", data: "fact"}, {type: "."}, {type: "num", data: 1}, {type: ".."}, {type: "?"}, {type: ","}, {type: "name", data: "prod"}, {type: "."}, {type: ","}, {type: "name", data: "map"}, {type: "$"}, {type: "name", data: "fact"}, {type: "num", data: 1}, {type: ".."}, {type: "num", data: 10}];
+tokens = [{type: "fn"}, {type: "name", data: "fact"}, {type: "."}, {type: "num", data: 1}, {type: ".."}, {type: "?"}, {type: ","}, {type: "name", data: "prod"}, {type: "."}, {type: ","}, {type: "name", data: "map"}, {type: "$"}, {type: "name", data: "fact"}, {type: "num", data: 1}, {type: ".."}, {type: "num", data: 10}];
 
 // c q = sqrt 3^2 + 4^2
 //tokens = [{type: "name", data: "c"}, {type: "name", data: "q"}, {type: "="}, {type: "name", data: "sqrt"}, {type: "num", data: "3"}, {type: "^"}, {type: "num", data: 2}, {type: "+"}, {type: "num", data: "4"}, {type: "^"}, {type: "num", data: 2}];
@@ -531,6 +522,8 @@ function parse_cdot(tokens) {
 // fn add [x y] .x + y., add ls 3 4
 //tokens = [{type: "fn"}, {type: "name", data: "add"}, {type: "["}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: "]"}, {type: "."}, {type: "name", data: "x"}, {type: "+"}, {type: "name", data: "y"}, {type: "."}, {type: ","}, {type: "name", data: "add"}, {type: "name", data: "ls"}, {type: "num", data: "3"}, {type: "num", data: "4"}];
 
+//tokens = [];
+
 //tokens = [{type: ","}];
 
 // a = 1, a <- 2
@@ -543,7 +536,10 @@ function parse_cdot(tokens) {
 //tokens = [{type: "fn"}, {type: "name", data: "a"}, {type: "."}, {type: "."}, {type: ","}, {type: "name", data: "a"}, {type: "<-"}, {type: "num", data: 1}];
 
 // a <- 1
-tokens = [{type: "name", data: "a"}, {type: "<-"}, {type: "num", data: 1}];
+//tokens = [{type: "name", data: "a"}, {type: "<-"}, {type: "num", data: 1}];
+
+// a b = 1 2
+//tokens = [{type: "name", data: "a"}, {type: "name", data: "b"}, {type: "="}, {type: "num", data: 1}, {type: "num", data: 2}];
 
 //tokens = "+".split(".(..).").map(type => ({type}));
 
