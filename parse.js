@@ -106,7 +106,13 @@ function parse_cdot(tokens) {
 				["=", "<-"].includes(tokens[i].type)) {
 			var_op = tokens[i].type;
 			tokens.splice(0, i + 1);
-			bound[0] = declared.concat(bound[0]);
+			if(var_op == "=") {
+				bound[0] = declared.concat(bound[0]);
+			} else if( var_op == "<-") {
+				if(!declared.every(({name}) => find_bound_named(name).kind == "var"))
+					throw "<-ing a func";
+				vars = vars.map(index_vars);
+			}
 		}
 		
 		let func = "id";
@@ -126,7 +132,8 @@ function parse_cdot(tokens) {
 		if(!var_op)
 			return {type: "call", func, i: scope_i, args};
 		else
-			return {type: var_op, vars, i: scope_i, func, args};
+			return {type: var_op, vars, func, i: scope_i, args};
+			
 	}
 	
 	function parse_vars(in_semiparens) {
@@ -139,6 +146,7 @@ function parse_cdot(tokens) {
 		let vars = [];
 		let declared = [];
 		
+		// Probably just use lookahead_var_list instead
 		for(var i = 0; !done(in_semiparens, i); i++) {
 			let token = tokens[i];
 			if(token.type == "name") {
@@ -278,6 +286,16 @@ function parse_cdot(tokens) {
 		}
 		
 		return parse_ops(arg);
+	}
+	
+	function index_vars(vars) {
+		if(vars.type == "var") {
+			return {type: "var", data: vars.data, i: find_bound_named(vars.data).i}
+		} else if(["list", "dict"].includes(vars.type)) {
+			return {type: vars.type, data: vars.data.map(index_vars)};
+		} else {
+			throw "how?";
+		}
 	}
 	
 	function parse_chunk(in_semiparens) {
@@ -513,9 +531,18 @@ function parse_cdot(tokens) {
 //tokens = [{type: "."}, {type: ","}, {type: "store"}, {type: "name", data: "ls"}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: ","}, {type: "name", data: "x"}, {type: "+"}, {type: "name", data: "y"}, {type: "."}];
 
 // fn add [x y] .x + y., add ls 3 4
-tokens = [{type: "fn"}, {type: "name", data: "add"}, {type: "["}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: "]"}, {type: "."}, {type: "name", data: "x"}, {type: "+"}, {type: "name", data: "y"}, {type: "."}, {type: ","}, {type: "name", data: "add"}, {type: "name", data: "ls"}, {type: "num", data: "3"}, {type: "num", data: "4"}];
+//tokens = [{type: "fn"}, {type: "name", data: "add"}, {type: "["}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: "]"}, {type: "."}, {type: "name", data: "x"}, {type: "+"}, {type: "name", data: "y"}, {type: "."}, {type: ","}, {type: "name", data: "add"}, {type: "name", data: "ls"}, {type: "num", data: "3"}, {type: "num", data: "4"}];
 
 //tokens = [{type: ","}];
+
+// a = 1, a <- 2
+//tokens = [{type: "name", data: "a"}, {type: "="}, {type: "num", data: 1}, {type: ","}, {type: "name", data: "a"}, {type: "<-"}, {type: "num", data: 2}];
+
+// ls a = ls 1, ls a <- ls 2
+//tokens = [{type: "name", data: "ls"}, {type: "name", data: "a"}, {type: "="}, {type: "name", data: "ls"}, {type: "num", data: 1}, {type: ","}, {type: "name", data: "ls"}, {type: "name", data: "a"}, {type: "<-"}, {type: "name", data: "ls"}, {type: "num", data: 2}];
+
+// fn a . ., a <- 1
+tokens = [{type: "fn"}, {type: "name", data: "a"}, {type: "."}, {type: "."}, {type: ","}, {type: "name", data: "a"}, {type: "<-"}, {type: "num", data: 1}];
 
 //tokens = "+".split(".(..).").map(type => ({type}));
 
