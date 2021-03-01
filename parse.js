@@ -29,7 +29,6 @@ let find_highest_prec_op = stuff =>
 
 function parse_cdot(tokens) {
 	let bound = [built_in_funcs.map(name => ({kind: "func", name}))];
-	// Have an error for redeclaring in the same scope
 	
 	let find_bound_named = name =>
 		bound.map_maybe((scope, i) => {
@@ -96,6 +95,9 @@ function parse_cdot(tokens) {
 			var_op = tokens[i].type;
 			tokens.splice(0, i + 1);
 			if(var_op == "=") {
+				for(let new_vars of declared)
+					if(bound[0].map(var_or_func => var_or_func.name).includes(new_vars.name))
+						throw "already bound in this scope bruh";
 				bound[0] = declared.concat(bound[0]);
 			} else if( var_op == "<-") {
 				if(!declared.every(({name}) => find_bound_named(name).kind == "var"))
@@ -435,6 +437,8 @@ function parse_cdot(tokens) {
 			throw "fn got no name";
 		
 		let name = tokens.shift().data;
+		if(bound[0].map(var_or_func => var_or_func.name).includes(name))
+			throw "already bound in this scope bruh";
 		bound[0].unshift({kind: "func", name: name});
 		
 		let {vars, declared} = parse_vars(in_semiparens);
@@ -474,6 +478,9 @@ function parse_cdot(tokens) {
 	
 	function parse_store(in_semiparens) {
 		let {vars, declared} = parse_vars(in_semiparens);
+		for(let new_vars of declared)
+			if(bound[0].map(var_or_func => var_or_func.name).includes(new_vars.name))
+				throw "already bound in this scope bruh";
 		bound[0] = declared.concat(bound[0]);
 		if(!done(in_semiparens))
 			throw "more stuff after store/args?";
@@ -505,7 +512,7 @@ function parse_cdot(tokens) {
 }
 
 // fn fact .1..?, prod., map $fact 1..10
-tokens = [{type: "fn"}, {type: "name", data: "fact"}, {type: "."}, {type: "num", data: 1}, {type: ".."}, {type: "?"}, {type: ","}, {type: "name", data: "prod"}, {type: "."}, {type: ","}, {type: "name", data: "map"}, {type: "$"}, {type: "name", data: "fact"}, {type: "num", data: 1}, {type: ".."}, {type: "num", data: 10}];
+//tokens = [{type: "fn"}, {type: "name", data: "fact"}, {type: "."}, {type: "num", data: 1}, {type: ".."}, {type: "?"}, {type: ","}, {type: "name", data: "prod"}, {type: "."}, {type: ","}, {type: "name", data: "map"}, {type: "$"}, {type: "name", data: "fact"}, {type: "num", data: 1}, {type: ".."}, {type: "num", data: 10}];
 
 // c q = sqrt 3^2 + 4^2
 //tokens = [{type: "name", data: "c"}, {type: "name", data: "q"}, {type: "="}, {type: "name", data: "sqrt"}, {type: "num", data: "3"}, {type: "^"}, {type: "num", data: 2}, {type: "+"}, {type: "num", data: "4"}, {type: "^"}, {type: "num", data: 2}];
@@ -540,6 +547,15 @@ tokens = [{type: "fn"}, {type: "name", data: "fact"}, {type: "."}, {type: "num",
 
 // a b = 1 2
 //tokens = [{type: "name", data: "a"}, {type: "name", data: "b"}, {type: "="}, {type: "num", data: 1}, {type: "num", data: 2}];
+
+// a = 1, a = 2
+//tokens = [{type: "name", data: "a"}, {type: "="}, {type: "num", data: 1}, {type: ","}, {type: "name", data: "a"}, {type: "="}, {type: "num", data: 2}];
+
+// fn bruh a .a., bruh 5
+//tokens = [{type: "fn"}, {type: "name", data: "bruh"}, {type: "name", data: "a"}, {type: "."}, {type: "name", data: "a"}, {type: "."}, {type: "name", data: "bruh"}, {type: "num", data: 5}];
+
+// fn bruh a .a., fn bruh a .a.
+//tokens = [{type: "fn"}, {type: "name", data: "bruh"}, {type: "name", data: "a"}, {type: "."}, {type: "name", data: "a"}, {type: "."}, {type: "fn"}, {type: "name", data: "bruh"}, {type: "name", data: "a"}, {type: "."}, {type: "name", data: "a"}, {type: "."}];
 
 //tokens = "+".split(".(..).").map(type => ({type}));
 
