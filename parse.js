@@ -30,8 +30,6 @@ let find_highest_prec_op = stuff =>
 function parse_cdot(tokens) {
 	let bound = [built_in_funcs.map(name => ({kind: "func", name}))];
 	// Have an error for redeclaring in the same scope
-	// Have an error for <-ing a nonexistant var
-	// Rn it does that set declares always, which it should never
 	
 	let find_bound_named = name =>
 		bound.map_maybe((scope, i) => {
@@ -542,7 +540,10 @@ function parse_cdot(tokens) {
 //tokens = [{type: "name", data: "ls"}, {type: "name", data: "a"}, {type: "="}, {type: "name", data: "ls"}, {type: "num", data: 1}, {type: ","}, {type: "name", data: "ls"}, {type: "name", data: "a"}, {type: "<-"}, {type: "name", data: "ls"}, {type: "num", data: 2}];
 
 // fn a . ., a <- 1
-tokens = [{type: "fn"}, {type: "name", data: "a"}, {type: "."}, {type: "."}, {type: ","}, {type: "name", data: "a"}, {type: "<-"}, {type: "num", data: 1}];
+//tokens = [{type: "fn"}, {type: "name", data: "a"}, {type: "."}, {type: "."}, {type: ","}, {type: "name", data: "a"}, {type: "<-"}, {type: "num", data: 1}];
+
+// a <- 1
+tokens = [{type: "name", data: "a"}, {type: "<-"}, {type: "num", data: 1}];
 
 //tokens = "+".split(".(..).").map(type => ({type}));
 
