@@ -10,7 +10,7 @@ let op_table = [
 	["&", "|"]
 ];
 
-let built_in_funcs = ["ls", "sqrt", "map", "prod", "print"];
+let built_in_funcs = ["ls", "sqrt", "map", "prod", "print", "sum"];
 
 let ops = op_table.flat();
 
@@ -134,53 +134,13 @@ function parse_cdot(tokens) {
 	}
 	
 	function lookahead_vars(in_semiparens) {
-		let vars = [];
+		let i = 0;
 		let declared = [];
+		let vars;
 		
-		// Probably just use lookahead_var_list instead
-		for(var i = 0; !done(in_semiparens, i); i++) {
-			let token = tokens[i];
-			if(token.type == "name") {
-				if(token.data == "ls") {
-					i++;
-					let var_list;
-					({var_list, i} = lookahead_var_list());
-					vars.push({type: "list", data: var_list});
-					i--;
-				} else if(token.data == "dict") {
-					i++;
-					let var_dict;
-					({var_dict, i} = lookahead_var_dict());
-					vars.push({type: "dict", data: var_dict});
-					i--;
-				} else {
-					vars.push({type: "var", data: token.data});
-					declared.push({kind: "var", name: token.data});
-				}
-			} else if(token.type == "[") {
-				i++;
-				let var_list;
-				({var_list, i} = lookahead_var_list());
-				if(
-						!var_list ||
-						i >= tokens.length ||
-						tokens[i].type != "]")
-					break;
-				vars.push({type: "list", data: var_list});
-			} else if(token.type == "{") {
-				i++;
-				let var_dict;
-				({var_dict, i} = lookahead_var_dict());
-				if(
-						!var_dict ||
-						i >= tokens.length ||
-						tokens[i].type != "}")
-					break;
-				vars.push({type: "dict", data: var_dict});
-			} else {
-				break;
-			}
-		}
+		({vars, i} = lookahead_var_list());
+		
+		return {vars, declared, i};
 		
 		function lookahead_var_list() {
 			let vars = [];
@@ -190,13 +150,13 @@ function parse_cdot(tokens) {
 					if(token.data == "ls") {
 						i++;
 						let var_list;
-						({var_list, i} = lookahead_var_list());
+						({vars: var_list, i} = lookahead_var_list());
 						vars.push({type: "list", data: var_list});
 						i--;
 					} else if(token.data == "dict") {
 						i++;
 						let var_dict;
-						({var_dict, i} = lookahead_var_dict());
+						({vars: var_dict, i} = lookahead_var_dict());
 						vars.push({type: "dict", data: var_dict});
 						i--;
 					} else {
@@ -206,7 +166,7 @@ function parse_cdot(tokens) {
 				} else if(token.type == "[") {
 					i++;
 					let var_list;
-					({var_list, i} = lookahead_var_list());
+					({vars: var_list, i} = lookahead_var_list());
 					if(
 							!var_list ||
 							i >= tokens.length ||
@@ -216,7 +176,7 @@ function parse_cdot(tokens) {
 				} else if(token.type == "{") {
 					i++;
 					let var_dict;
-					({var_dict, i} = lookahead_var_dict());
+					({vars: var_dict, i} = lookahead_var_dict());
 					if(
 							!var_dict ||
 							i >= tokens.length ||
@@ -228,7 +188,7 @@ function parse_cdot(tokens) {
 				}
 			}
 			
-			return {var_list: vars, i};
+			return {vars, i};
 		}
 		
 		function lookahead_var_dict() {
@@ -247,10 +207,8 @@ function parse_cdot(tokens) {
 				}
 			}
 			
-			return {var_dict: vars, i};
+			return {vars, i};
 		}
-		
-		return {vars, declared, i};
 	}
 	
 	function parse_args(in_semiparens) {
@@ -487,7 +445,7 @@ function parse_cdot(tokens) {
 		
 		return {type: "store", vars};
 	}
-			
+	
 	function parse_if(in_semiparens) {
 		
 	}
@@ -552,10 +510,13 @@ function parse_cdot(tokens) {
 //tokens = [{type: "name", data: "a"}, {type: "="}, {type: "num", data: 1}, {type: ","}, {type: "name", data: "a"}, {type: "="}, {type: "num", data: 2}];
 
 // fn bruh a .a., bruh 5
-//tokens = [{type: "fn"}, {type: "name", data: "bruh"}, {type: "name", data: "a"}, {type: "."}, {type: "name", data: "a"}, {type: "."}, {type: "name", data: "bruh"}, {type: "num", data: 5}];
+//tokens = [{type: "fn"}, {type: "name", data: "bruh"}, {type: "name", data: "a"}, {type: "."}, {type: "name", data: "a"}, {type: "."}, {type: ","}, {type: "name", data: "bruh"}, {type: "num", data: 5}];
 
 // fn bruh a .a., fn bruh a .a.
-//tokens = [{type: "fn"}, {type: "name", data: "bruh"}, {type: "name", data: "a"}, {type: "."}, {type: "name", data: "a"}, {type: "."}, {type: "fn"}, {type: "name", data: "bruh"}, {type: "name", data: "a"}, {type: "."}, {type: "name", data: "a"}, {type: "."}];
+//tokens = [{type: "fn"}, {type: "name", data: "bruh"}, {type: "name", data: "a"}, {type: "."}, {type: "name", data: "a"}, {type: "."}, {type: ","}, {type: "fn"}, {type: "name", data: "bruh"}, {type: "name", data: "a"}, {type: "."}, {type: "name", data: "a"}, {type: "."}];
+
+// 1..10, map .,1.., sum.
+//tokens = [{type: "num", data: 1}, {type: ".."}, {type: "num", data: 10}, {type: ","}, {type: "name", data: "map"}, {type: "."}, {type: ","}, {type: "num", data: 1}, {type: ".."}, {type: ","}, {type: "name", data: "sum"}, {type: "."}];
 
 //tokens = "+".split(".(..).").map(type => ({type}));
 
