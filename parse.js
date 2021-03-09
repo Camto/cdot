@@ -29,6 +29,9 @@ let find_highest_prec_op = stuff =>
 			return highest;
 	}, {i: null, prec: op_table.length}).i;
 
+// For all keywords: if it's unexpected, see if it's spelt differently than default, chances are the user wanted a fn or var
+// For same scope rebinding, check if name is spelt differently, chances are the user thought they would be different
+
 function parse_cdot(tokens) {
 	let bound = [[
 		...built_in_vars.map(name => ({kind: "var", name})),
@@ -105,6 +108,7 @@ function parse_cdot(tokens) {
 			}
 		}
 		
+		// Consider making passing from pipe into tuples (func = "id") an error because that's weird functionality
 		let func = "id";
 		let scope_i = 0;
 		if(
@@ -425,6 +429,9 @@ function parse_cdot(tokens) {
 	
 	// I'll make it whole-ass parens for now
 	// I think if and while should have the left come in to *both* of them
+	
+	// Consider making a two versions of all these constructs: one for pipes, one for not
+	// Possibly though only pipe version because people won't necessarily expect non-pipe version
 	
 	function parse_if(in_semiparens) {
 		let branches = [{
