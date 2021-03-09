@@ -73,12 +73,6 @@ function parse_cdot(tokens) {
 			case "args":
 				return parse_store(in_semiparens);
 			
-			case "if": return parse_if(in_semiparens);
-			case "for": return parse_for(in_semiparens);
-			case "while": return parse_while(in_semiparens);
-			case "repeat": return parse_repeat(in_semiparens);
-			case "switch": return parse_switch(in_semiparens);
-			
 			default:
 				tokens.unshift(first);
 				return parse_normal(in_semiparens);
@@ -124,7 +118,6 @@ function parse_cdot(tokens) {
 			return {type: "call", func, i: scope_i, args};
 		else
 			return {type: var_op, vars, func, i: scope_i, args};
-			
 	}
 	
 	function parse_vars(in_semiparens) {
@@ -336,6 +329,12 @@ function parse_cdot(tokens) {
 			case "]": throw "unexpected ]";
 			case "}": throw "unexpected }";
 			
+			case "if": return parse_if(in_semiparens);
+			case "for": return parse_for(in_semiparens);
+			case "while": return parse_while(in_semiparens);
+			case "repeat": return parse_repeat(in_semiparens);
+			case "switch": return parse_switch(in_semiparens);
+			
 			default:
 				tokens.unshift(first);
 				return;
@@ -443,8 +442,11 @@ function parse_cdot(tokens) {
 		if(!done(in_semiparens))
 			throw "more stuff after store/args?";
 		
-		return {type: "store", vars};
+		return {type: "=", vars, func: "id", i: 0, args: []};
 	}
+	
+	// I'll make it whole-ass parens for now
+	// I think if and while should have the left come in to *both* of them
 	
 	function parse_if(in_semiparens) {
 		
@@ -482,7 +484,7 @@ function parse_cdot(tokens) {
 //tokens = [{type: "name", data: "print"}, {type: "name", data: "sqrt"}, {type: "num", data: 4}];
 
 // .,args ls x y, x + y.
-//tokens = [{type: "."}, {type: ","}, {type: "store"}, {type: "name", data: "ls"}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: ","}, {type: "name", data: "x"}, {type: "+"}, {type: "name", data: "y"}, {type: "."}];
+tokens = [{type: "."}, {type: ","}, {type: "store"}, {type: "name", data: "ls"}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: ","}, {type: "name", data: "x"}, {type: "+"}, {type: "name", data: "y"}, {type: "."}];
 
 // fn add [x y] .x + y., add ls 3 4
 //tokens = [{type: "fn"}, {type: "name", data: "add"}, {type: "["}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: "]"}, {type: "."}, {type: "name", data: "x"}, {type: "+"}, {type: "name", data: "y"}, {type: "."}, {type: ","}, {type: "name", data: "add"}, {type: "name", data: "ls"}, {type: "num", data: "3"}, {type: "num", data: "4"}];
