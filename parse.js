@@ -12,6 +12,8 @@ let op_table = [
 
 let built_in_funcs = ["ls", "sqrt", "map", "prod", "print", "sum"];
 
+let built_in_vars = ["true", "false"];
+
 let ops = op_table.flat();
 
 let is_op = token => ops.includes(token.type) && !token.left;
@@ -28,7 +30,10 @@ let find_highest_prec_op = stuff =>
 	}, {i: null, prec: op_table.length}).i;
 
 function parse_cdot(tokens) {
-	let bound = [built_in_funcs.map(name => ({kind: "func", name}))];
+	let bound = [[
+		...built_in_vars.map(name => ({kind: "var", name})),
+		...built_in_funcs.map(name => ({kind: "func", name}))
+	]];
 	
 	let find_bound_named = name =>
 		bound.map_maybe((scope, i) => {
@@ -335,6 +340,9 @@ function parse_cdot(tokens) {
 			case "repeat": return parse_repeat(in_semiparens);
 			case "switch": return parse_switch(in_semiparens);
 			
+			case "else": throw "Else with no if? :flushed:";
+			case "elif": throw "Elif with no if? :flushed:";
+			
 			default:
 				tokens.unshift(first);
 				return;
@@ -399,38 +407,8 @@ function parse_cdot(tokens) {
 		bound[0].unshift({kind: "func", name: name});
 		
 		let {vars, declared} = parse_vars(in_semiparens);
-		if(
-				done(in_semiparens) ||
-				!["(", "."].includes(tokens[0].type))
-			throw "no fn body bro";
 		
-		let open = tokens.shift().type;
-		
-		if(tokens.length > 0 && tokens[0].type == ",")
-			throw "nuh uh fn ain't use no lambda";
-		
-		let body;
-		if(open == "(") {
-			body = parse_rec(false, declared);
-			
-			if(tokens.length > 0 && tokens[0].type == ")")
-				tokens.shift();
-			else
-				throw "terminated ( with wrong thing";
-		} else if(open == ".") {
-			if(in_semiparens) throw "how?";
-			
-			body = parse_rec(true, declared);
-			
-			if(tokens.length > 0 && tokens[0].type == ".")
-				tokens.shift();
-			else
-				throw "terminated . with wrong thing";
-		} else {
-			throw "how?";
-		}
-		
-		return {type: "func", name, args: vars, body};
+		return {type: "func", name, args: vars, body: parse_block(in_semiparens, declared)};
 	}
 	
 	function parse_store(in_semiparens) {
@@ -449,7 +427,28 @@ function parse_cdot(tokens) {
 	// I think if and while should have the left come in to *both* of them
 	
 	function parse_if(in_semiparens) {
+		let branches = [{
+			cond: parse_block(in_semiparens, []),
+			body: parse_block(in_semiparens, [])
+		}];
 		
+		while(!done(in_semiparens) && tokens[0].type == "elif") {
+			tokens.shift();
+			branches.push({
+				cond: parse_block(in_semiparens, []),
+				body: parse_block(in_semiparens, [])
+			});
+		}
+		
+		if(!done(in_semiparens) && tokens[0].type == "else") {
+			tokens.shift();
+			branches.push({
+				cond: null,
+				body: parse_block(in_semiparens, [])
+			});
+		}
+		
+		return {type: "if", branches};
 	}
 	
 	function parse_for(in_semiparens) {
@@ -468,6 +467,41 @@ function parse_cdot(tokens) {
 		
 	}
 	
+	function parse_block(in_semiparens, declared) {
+		if(
+				done(in_semiparens) ||
+				!["(", "."].includes(tokens[0].type))
+			throw "no block bro";
+		
+		let open = tokens.shift().type;
+		
+		if(tokens.length > 0 && tokens[0].type == ",")
+			throw "nuh uh block ain't use no lambda";
+		
+		let block;
+		if(open == "(") {
+			block = parse_rec(false, declared);
+			
+			if(tokens.length > 0 && tokens[0].type == ")")
+				tokens.shift();
+			else
+				throw "terminated ( with wrong thing";
+		} else if(open == ".") {
+			if(in_semiparens) throw "how?";
+			
+			block = parse_rec(true, declared);
+			
+			if(tokens.length > 0 && tokens[0].type == ".")
+				tokens.shift();
+			else
+				throw "terminated . with wrong thing";
+		} else {
+			throw "how?";
+		}
+		
+		return block;
+	}
+	
 	return parse_rec(false);
 }
 
@@ -484,7 +518,7 @@ function parse_cdot(tokens) {
 //tokens = [{type: "name", data: "print"}, {type: "name", data: "sqrt"}, {type: "num", data: 4}];
 
 // .,args ls x y, x + y.
-tokens = [{type: "."}, {type: ","}, {type: "store"}, {type: "name", data: "ls"}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: ","}, {type: "name", data: "x"}, {type: "+"}, {type: "name", data: "y"}, {type: "."}];
+//tokens = [{type: "."}, {type: ","}, {type: "store"}, {type: "name", data: "ls"}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: ","}, {type: "name", data: "x"}, {type: "+"}, {type: "name", data: "y"}, {type: "."}];
 
 // fn add [x y] .x + y., add ls 3 4
 //tokens = [{type: "fn"}, {type: "name", data: "add"}, {type: "["}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: "]"}, {type: "."}, {type: "name", data: "x"}, {type: "+"}, {type: "name", data: "y"}, {type: "."}, {type: ","}, {type: "name", data: "add"}, {type: "name", data: "ls"}, {type: "num", data: "3"}, {type: "num", data: "4"}];
@@ -492,6 +526,10 @@ tokens = [{type: "."}, {type: ","}, {type: "store"}, {type: "name", data: "ls"},
 //tokens = [];
 
 //tokens = [{type: ","}];
+
+//tokens = [{type: "="}];
+
+//tokens = [{type: "<-"}];
 
 // a = 1, a <- 2
 //tokens = [{type: "name", data: "a"}, {type: "="}, {type: "num", data: 1}, {type: ","}, {type: "name", data: "a"}, {type: "<-"}, {type: "num", data: 2}];
@@ -519,6 +557,12 @@ tokens = [{type: "."}, {type: ","}, {type: "store"}, {type: "name", data: "ls"},
 
 // 1..10, map .,1.., sum.
 //tokens = [{type: "num", data: 1}, {type: ".."}, {type: "num", data: 10}, {type: ","}, {type: "name", data: "map"}, {type: "."}, {type: ","}, {type: "num", data: 1}, {type: ".."}, {type: ","}, {type: "name", data: "sum"}, {type: "."}];
+
+// print if (true) .4. else .5.
+//tokens = [{type: "name", data: "print"}, {type: "if"}, {type: "("}, {type: "name", data: "true"}, {type: ")"}, {type: "."}, {type: "num", data: 4}, {type: "."}, {type: "else"}, {type: "."}, {type: "num", data: 5}, {type: "."}];
+
+// if .1.  ."a". elif .2.  ."b". elif .3.  ."c". else ."d".  69 420
+tokens = [{type: "if"}, {type: "."}, {type: "num", data: 1}, {type: "."}, {type: "."}, {type: "str", data: "a"}, {type: "."}, {type: "elif"}, {type: "."}, {type: "num", data: 2}, {type: "."}, {type: "."}, {type: "str", data: "b"}, {type: "."}, {type: "elif"}, {type: "."}, {type: "num", data: 3}, {type: "."}, {type: "."}, {type: "str", data: "c"}, {type: "."}, {type: "else"}, {type: "."}, {type: "str", data: "d"}, {type: "."}, {type: "num", data: 69}, {type: "num", data: 420}];
 
 //tokens = "+".split(".(..).").map(type => ({type}));
 
