@@ -149,7 +149,7 @@ function parse_cdot(tokens) {
 			for(; !done(in_semiparens, i); i++) {
 				let token = tokens[i];
 				if(token.type == "name") {
-					if(token.data == "ls") {
+					if(["ls", "list"].includes(token.data)) {
 						i++;
 						let var_list;
 						({vars: var_list, i} = lookahead_var_list());
@@ -198,7 +198,7 @@ function parse_cdot(tokens) {
 			for(; !done(in_semiparens, i); i++) {
 				let token = tokens[i];
 				if(token.type == "name") {
-					if(["ls", "dict"].includes(token.data == "ls")) {
+					if(["ls", "list", "dict"].includes(token.data)) {
 						break;
 					} else {
 						vars.push({type: "var", data: token.data});
@@ -279,7 +279,7 @@ function parse_cdot(tokens) {
 					if(bound_name.kind == "var")
 						return {type: "ref", name: token.data, i: bound_name.i};
 					else
-						return {type: "func", name: token.data, i: bound_name.i};
+						return {type: "funcref", name: token.data, i: bound_name.i};
 				} else {
 					throw "$ with no token after";
 				}
@@ -296,7 +296,7 @@ function parse_cdot(tokens) {
 				else
 					throw "terminated ( with wrong thing";
 				
-				return {msg: "it parens", is_func, data: parse};
+				return {type: !is_func ? "expr" : "anonfunc", data: parse};
 			}
 			case "[": {
 				let parse = parse_rec(false);
@@ -306,7 +306,7 @@ function parse_cdot(tokens) {
 				else
 					throw "terminated [ with wrong thing";
 				
-				return {msg: "it list", data: parse};
+				return {type: "list", data: parse};
 			}
 			case "{": {
 				let parse = parse_rec(false);
@@ -316,7 +316,7 @@ function parse_cdot(tokens) {
 				else
 					throw "terminated { with wrong thing";
 				
-				return {msg: "it dict", data: parse};
+				return {type: "dict", data: parse};
 			}
 			case ".": {
 				if(in_semiparens) throw "how?";
@@ -332,7 +332,7 @@ function parse_cdot(tokens) {
 				else
 					throw "terminated . with wrong thing";
 				
-				return {msg: "it semi(", is_func, data: parse};
+				return {type: !is_func ? "expr" : "anonfunc", data: parse};
 			}
 			case ")": throw "unexpected )";
 			case "]": throw "unexpected ]";
@@ -575,8 +575,6 @@ function parse_cdot(tokens) {
 
 // for ls x y .[[1 2] [3 4]]. .print x y.
 //tokens = [{type: "for"}, {type: "name", data: "ls"}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: "."}, {type: "["}, {type: "["}, {type: "num", data: 1}, {type: "num", data: 2}, {type: "]"}, {type: "["}, {type: "num", data: 3}, {type: "num", data: 4}, {type: "]"}, {type: "]"}, {type: "."}, {type: "."}, {type: "name", data: "print"}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: "."}];
-
-
 
 //tokens = "+".split(".(..).").map(type => ({type}));
 
