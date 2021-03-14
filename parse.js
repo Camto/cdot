@@ -576,7 +576,10 @@ function parse_cdot(tokens) {
 //tokens = [{type: "if"}, {type: "."}, {type: "num", data: 1}, {type: "."}, {type: "."}, {type: "str", data: "a"}, {type: "."}, {type: "elif"}, {type: "."}, {type: "num", data: 2}, {type: "."}, {type: "."}, {type: "str", data: "b"}, {type: "."}, {type: "elif"}, {type: "."}, {type: "num", data: 3}, {type: "."}, {type: "."}, {type: "str", data: "c"}, {type: "."}, {type: "else"}, {type: "."}, {type: "str", data: "d"}, {type: "."}, {type: "num", data: 69}, {type: "num", data: 420}];
 
 // for n .1..5. .print n.
-tokens = [{type: "for"}, {type: "name", data: "n"}, {type: "."}, {type: "num", data: 1}, {type: ".."}, {type: "num", data: 5}, {type: "."}, {type: "."}, {type: "name", data: "print"}, {type: "name", data: "n"}, {type: "."}];
+//tokens = [{type: "for"}, {type: "name", data: "n"}, {type: "."}, {type: "num", data: 1}, {type: ".."}, {type: "num", data: 5}, {type: "."}, {type: "."}, {type: "name", data: "print"}, {type: "name", data: "n"}, {type: "."}];
+
+// for ls x y .[[1 2] [3 4]]. .print x y.
+tokens = [{type: "for"}, {type: "name", data: "ls"}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: "."}, {type: "["}, {type: "["}, {type: "num", data: 1}, {type: "num", data: 2}, {type: "]"}, {type: "["}, {type: "num", data: 3}, {type: "num", data: 4}, {type: "]"}, {type: "]"}, {type: "."}, {type: "."}, {type: "name", data: "print"}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: "."}];
 
 //tokens = "+".split(".(..).").map(type => ({type}));
 
