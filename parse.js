@@ -427,12 +427,6 @@ function parse_cdot(tokens) {
 		return {type: "=", vars, func: "id", i: 0, args: []};
 	}
 	
-	// I'll make it whole-ass parens for now
-	// I think if and while should have the left come in to *both* of them
-	
-	// Consider making a two versions of all these constructs: one for pipes, one for not
-	// Possibly though only pipe version because people won't necessarily expect non-pipe version
-	
 	function parse_if(in_semiparens) {
 		let branches = [{
 			cond: parse_block(in_semiparens, []),
@@ -467,11 +461,17 @@ function parse_cdot(tokens) {
 	}
 	
 	function parse_while(in_semiparens) {
+		let cond = parse_block(in_semiparens, []);
+		let body = parse_block(in_semiparens, []);
 		
+		return {type: "while", cond, body};
 	}
 	
 	function parse_repeat(in_semiparens) {
+		let times = parse_block(in_semiparens, []);
+		let body = parse_block(in_semiparens, []);
 		
+		return {type: "repeat", times, body};
 	}
 	
 	function parse_switch(in_semiparens) {
@@ -579,7 +579,9 @@ function parse_cdot(tokens) {
 //tokens = [{type: "for"}, {type: "name", data: "n"}, {type: "."}, {type: "num", data: 1}, {type: ".."}, {type: "num", data: 5}, {type: "."}, {type: "."}, {type: "name", data: "print"}, {type: "name", data: "n"}, {type: "."}];
 
 // for ls x y .[[1 2] [3 4]]. .print x y.
-tokens = [{type: "for"}, {type: "name", data: "ls"}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: "."}, {type: "["}, {type: "["}, {type: "num", data: 1}, {type: "num", data: 2}, {type: "]"}, {type: "["}, {type: "num", data: 3}, {type: "num", data: 4}, {type: "]"}, {type: "]"}, {type: "."}, {type: "."}, {type: "name", data: "print"}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: "."}];
+//tokens = [{type: "for"}, {type: "name", data: "ls"}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: "."}, {type: "["}, {type: "["}, {type: "num", data: 1}, {type: "num", data: 2}, {type: "]"}, {type: "["}, {type: "num", data: 3}, {type: "num", data: 4}, {type: "]"}, {type: "]"}, {type: "."}, {type: "."}, {type: "name", data: "print"}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: "."}];
+
+
 
 //tokens = "+".split(".(..).").map(type => ({type}));
 
