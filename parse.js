@@ -459,7 +459,11 @@ function parse_cdot(tokens) {
 	}
 	
 	function parse_for(in_semiparens) {
+		let {iter_vars, declared} = parse_vars(in_semiparens);
+		let iterator = parse_block(in_semiparens, []);
+		let body = parse_block(in_semiparens, declared);
 		
+		return {type: "for", iter_vars, iterator, body};
 	}
 	
 	function parse_while(in_semiparens) {
@@ -569,7 +573,10 @@ function parse_cdot(tokens) {
 //tokens = [{type: "name", data: "print"}, {type: "if"}, {type: "("}, {type: "name", data: "true"}, {type: ")"}, {type: "."}, {type: "num", data: 4}, {type: "."}, {type: "else"}, {type: "."}, {type: "num", data: 5}, {type: "."}];
 
 // if .1.  ."a". elif .2.  ."b". elif .3.  ."c". else ."d".  69 420
-tokens = [{type: "if"}, {type: "."}, {type: "num", data: 1}, {type: "."}, {type: "."}, {type: "str", data: "a"}, {type: "."}, {type: "elif"}, {type: "."}, {type: "num", data: 2}, {type: "."}, {type: "."}, {type: "str", data: "b"}, {type: "."}, {type: "elif"}, {type: "."}, {type: "num", data: 3}, {type: "."}, {type: "."}, {type: "str", data: "c"}, {type: "."}, {type: "else"}, {type: "."}, {type: "str", data: "d"}, {type: "."}, {type: "num", data: 69}, {type: "num", data: 420}];
+//tokens = [{type: "if"}, {type: "."}, {type: "num", data: 1}, {type: "."}, {type: "."}, {type: "str", data: "a"}, {type: "."}, {type: "elif"}, {type: "."}, {type: "num", data: 2}, {type: "."}, {type: "."}, {type: "str", data: "b"}, {type: "."}, {type: "elif"}, {type: "."}, {type: "num", data: 3}, {type: "."}, {type: "."}, {type: "str", data: "c"}, {type: "."}, {type: "else"}, {type: "."}, {type: "str", data: "d"}, {type: "."}, {type: "num", data: 69}, {type: "num", data: 420}];
+
+// for n .1..5. .print n.
+tokens = [{type: "for"}, {type: "name", data: "n"}, {type: "."}, {type: "num", data: 1}, {type: ".."}, {type: "num", data: 5}, {type: "."}, {type: "."}, {type: "name", data: "print"}, {type: "name", data: "n"}, {type: "."}];
 
 //tokens = "+".split(".(..).").map(type => ({type}));
 
