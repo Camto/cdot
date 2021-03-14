@@ -12,50 +12,50 @@ fn vm_pop (pop \vm_stack),
 fn vm_push (push \vm_stack),
 
 vm_do_instr = (
-	switch get_byte
-		PUSH (next_byte, vm_push get_byte)
-		POP (vm_pop, void)
-		ADD (
+	switch (get_byte)
+		case (PUSH) (next_byte, vm_push get_byte)
+		case (POP) (vm_pop, void)
+		case (ADD) (
 			x y = (vm_pop) (vm_pop),
 			vm_push x + y
 		)
-		SUB (
+		case (SUB) (
 			x y = (vm_pop) (vm_pop),
 			vm_push x - y
 		)
-		R_INC (
+		case (R_INC) (
 			if (vm_pop)
 				(vm_reg_b <- vm_reg_b + 1)
 			else
 				(vm_reg_a <- vm_reg_a + 1)
 		)
-		R_DEC (
+		case (R_DEC) (
 			if (vm_pop)
 				(vm_reg_b <- vm_reg_b - 1)
 			else
 				(vm_reg_a <- vm_reg_a - 1)
 		)
-		MUL (
+		case (MUL) (
 			x y = (vm_pop) (vm_pop),
 			vm_push x * y
 		)
-		DIV (
+		case (DIV) (
 			x y = (vm_pop) (vm_pop),
 			vm_push x / y
 		)
-		JMP (vm_ip <- (vm_pop) - 1)
-		JZ (
+		case (JMP) (vm_ip <- (vm_pop) - 1)
+		case (JZ) (
 			if (!vm_reg_a)
 				(vm_ip <- (vm_pop) - 1)
 		)
-		MOV (
+		case (MOV) (
 			x y = (vm_pop) (vm_pop),
 			if (x)
 				(vm_reg_b <- y)
 			else
 				(vm_reg_a <- y)
 		)
-		R_PUSH (
+		case (R_PUSH) (
 			if (vm_pop)
 				(vm_push vm_reg_b)
 			else
