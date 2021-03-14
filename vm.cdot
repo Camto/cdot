@@ -1,7 +1,7 @@
 c.
 vm_ip = 0, vm_stack = [], vm_reg_a = 0, vm_reg_b = 0,
 
-PUSH POP ADD SUB R_INC R_DEC MUL DIV JMP JZ MOV R_PUSH = 1..12,
+[PUSH POP ADD SUB R_INC R_DEC MUL DIV JMP JZ MOV R_PUSH] = 1..12,
 REG_A REG_B = 0 1,
 
 code = [PUSH 3 PUSH REG_A MOV PUSH REG_A R_INC PUSH REG_A R_PUSH],
