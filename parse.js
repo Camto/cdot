@@ -342,7 +342,6 @@ function parse_cdot(tokens) {
 			case "for": return parse_for(in_semiparens);
 			case "while": return parse_while(in_semiparens);
 			case "repeat": return parse_repeat(in_semiparens);
-			case "switch": return parse_switch(in_semiparens);
 			
 			case "else": throw "Else with no if? :flushed:";
 			case "elif": throw "Elif with no if? :flushed:";
@@ -472,10 +471,6 @@ function parse_cdot(tokens) {
 		let body = parse_block(in_semiparens, []);
 		
 		return {type: "repeat", times, body};
-	}
-	
-	function parse_switch(in_semiparens) {
-		
 	}
 	
 	function parse_block(in_semiparens, declared) {
