@@ -2,24 +2,28 @@ Array.prototype.map_maybe = function(fn) {
 	return this.map(fn).filter(i => i != null);
 }
 
-let op_table = [
+let bin_op_table = [
 	["^"],
 	["*", "/", "%", "%%"],
 	["+", "-"],
-	["==", "!=", "<", ">", "<=", ">=", ".."],
+	["..", "@"],
+	["<", ">", "<=", ">="],
+	["==", "!="],
 	["&", "|"]
 ];
+
+let un_ops = ["~", "!"];
 
 let built_in_funcs = ["ls", "sqrt", "map", "prod", "print", "sum"];
 
 let built_in_vars = ["true", "false"];
 
-let ops = op_table.flat();
+let ops = bin_op_table.flat().concat(un_ops);
 
-let is_op = token => ops.includes(token.type) && !token.left;
+let is_op = token => ops.includes(token.type) && !token.left && !token.arg;
 
 let find_prec = op =>
-	op_table.map_maybe((row, i) => row.includes(op.type) ? i : null);
+	bin_op_table.map_maybe((row, i) => row.includes(op.type) ? i : null);
 
 let find_highest_prec_op = stuff =>
 	stuff.reduce((highest, thing, i) => {
@@ -27,7 +31,7 @@ let find_highest_prec_op = stuff =>
 			return {i, prec: find_prec(thing)};
 		else
 			return highest;
-	}, {i: null, prec: op_table.length}).i;
+	}, {i: null, prec: bin_op_table.length}).i;
 
 // For all keywords: if it's unexpected, see if it's spelt differently than default, chances are the user wanted a fn or var
 // For same scope rebinding, check if name is spelt differently, chances are the user thought they would be different
@@ -229,11 +233,12 @@ function parse_cdot(tokens) {
 			arg.push(tokens.shift());
 			if(
 					!done(in_semiparens) &&
-					!is_op(tokens[0])) {
+					!is_op(tokens[0]))
 				arg.push(parse_chunk(in_semiparens));
-			} else {
+			else if(
+					done(in_semiparens) ||
+					!un_ops.includes(tokens[0].type))
 				break;
-			}
 		}
 		
 		return parse_ops(arg);
@@ -356,8 +361,22 @@ function parse_cdot(tokens) {
 		if(arg.length == 1) {
 			if(!is_op(arg[0]))
 				return arg[0];
+			else if(un_ops.includes(arg[0].type))
+				return {type: arg[0].type, arg: "implicit"};
 			else
-				return {type: arg.type, left: "implicit", right: "implicit"};
+				return {type: arg[0].type, left: "implicit", right: "implicit"};
+		}
+		
+		for(let i = arg.length - 1; i >= 0; i--) {
+			if(un_ops.includes(arg[i].type)) {
+				if(i != arg.length - 1)
+					arg.splice(
+						i, 2,
+						{type: arg[i].type, arg: arg[i + 1]}
+					);
+				else
+					arg[i] = {type: arg[i].type, arg: "implicit"};
+			}
 		}
 		
 		i_of_highest = find_highest_prec_op(arg);
@@ -515,7 +534,7 @@ function parse_cdot(tokens) {
 //tokens = [{type: "fn"}, {type: "name", data: "fact"}, {type: "."}, {type: "num", data: 1}, {type: ".."}, {type: "?"}, {type: ","}, {type: "name", data: "prod"}, {type: "."}, {type: ","}, {type: "name", data: "map"}, {type: "$"}, {type: "name", data: "fact"}, {type: "num", data: 1}, {type: ".."}, {type: "num", data: 10}];
 
 // c q = sqrt 3^2 + 4^2
-//tokens = [{type: "name", data: "c"}, {type: "name", data: "q"}, {type: "="}, {type: "name", data: "sqrt"}, {type: "num", data: "3"}, {type: "^"}, {type: "num", data: 2}, {type: "+"}, {type: "num", data: "4"}, {type: "^"}, {type: "num", data: 2}];
+//tokens = [{type: "name", data: "c"}, {type: "name", data: "q"}, {type: "="}, {type: "name", data: "sqrt"}, {type: "num", data: 3}, {type: "^"}, {type: "num", data: 2}, {type: "+"}, {type: "num", data: 4}, {type: "^"}, {type: "num", data: 2}];
 
 // 1+ +1
 //tokens = [{type: "num"}, {type: "+"}, {type: "+"}, {type: "num"}];
@@ -527,7 +546,7 @@ function parse_cdot(tokens) {
 //tokens = [{type: "."}, {type: ","}, {type: "store"}, {type: "name", data: "ls"}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: ","}, {type: "name", data: "x"}, {type: "+"}, {type: "name", data: "y"}, {type: "."}];
 
 // fn add [x y] .x + y., add ls 3 4
-//tokens = [{type: "fn"}, {type: "name", data: "add"}, {type: "["}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: "]"}, {type: "."}, {type: "name", data: "x"}, {type: "+"}, {type: "name", data: "y"}, {type: "."}, {type: ","}, {type: "name", data: "add"}, {type: "name", data: "ls"}, {type: "num", data: "3"}, {type: "num", data: "4"}];
+//tokens = [{type: "fn"}, {type: "name", data: "add"}, {type: "["}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: "]"}, {type: "."}, {type: "name", data: "x"}, {type: "+"}, {type: "name", data: "y"}, {type: "."}, {type: ","}, {type: "name", data: "add"}, {type: "name", data: "ls"}, {type: "num", data: 3}, {type: "num", data: 4}];
 
 //tokens = [];
 
@@ -577,6 +596,17 @@ function parse_cdot(tokens) {
 //tokens = [{type: "for"}, {type: "name", data: "ls"}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: "."}, {type: "["}, {type: "["}, {type: "num", data: 1}, {type: "num", data: 2}, {type: "]"}, {type: "["}, {type: "num", data: 3}, {type: "num", data: 4}, {type: "]"}, {type: "]"}, {type: "."}, {type: "."}, {type: "name", data: "print"}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: "."}];
 
 //tokens = "+".split(".(..).").map(type => ({type}));
+
+// !true & false, true | !false
+//tokens = [{type: "!"}, {type: "name", data: "true"}, {type: "&"}, {type: "name", data: "false"}, {type: ","}, {type: "name", data: "true"}, {type: "|"}, {type: "!"}, {type: "name", data: "false"}];
+
+// ~
+//tokens = [{type: "~"}];
+
+// 3 + ~
+//tokens = [{type: "num"}, {type: "+"}, {type: "~"}];
+
+//tokens = "~~n+n*~n".split("").map(type => type != "n" ? {type} : {type: "num"});
 
 console.log(JSON.stringify(parse_cdot(tokens)));
 //console.log(parse_cdot(tokens));
