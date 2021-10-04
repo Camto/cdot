@@ -1,3 +1,5 @@
+"use strict";
+
 Array.prototype.map_maybe = function(fn) {
 	return this.map(fn).filter(i => i != null);
 }
@@ -36,7 +38,7 @@ let find_highest_prec_op = stuff =>
 // For all keywords: if it's unexpected, see if it's spelt differently than default, chances are the user wanted a fn or var
 // For same scope rebinding, check if name is spelt differently, chances are the user thought they would be different
 
-function parse_cdot(tokens) {
+function parse(tokens) {
 	let bound = [[
 		...built_in_vars.map(name => ({kind: "var", name})),
 		...built_in_funcs.map(name => ({kind: "func", name}))
@@ -225,7 +227,7 @@ function parse_cdot(tokens) {
 	}
 	
 	function parse_arg(in_semiparens) {
-		first_chunk = parse_chunk(in_semiparens);
+		let first_chunk = parse_chunk(in_semiparens);
 		let arg = first_chunk ? [first_chunk] : [];
 		while(
 				!done(in_semiparens) &&
@@ -379,7 +381,7 @@ function parse_cdot(tokens) {
 			}
 		}
 		
-		i_of_highest = find_highest_prec_op(arg);
+		let i_of_highest = find_highest_prec_op(arg);
 		while(arg.length > 1) {
 			if(i_of_highest > 0 && is_op(arg[i_of_highest - 1]))
 				throw "implicit left argument in the middle of operators";
@@ -593,7 +595,7 @@ function parse_cdot(tokens) {
 //tokens = [{type: "for"}, {type: "name", data: "n"}, {type: "."}, {type: "num", data: 1}, {type: ".."}, {type: "num", data: 5}, {type: "."}, {type: "."}, {type: "name", data: "print"}, {type: "name", data: "n"}, {type: "."}];
 
 // for ls x y .[[1 2] [3 4]]. .print x y.
-//tokens = [{type: "for"}, {type: "name", data: "ls"}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: "."}, {type: "["}, {type: "["}, {type: "num", data: 1}, {type: "num", data: 2}, {type: "]"}, {type: "["}, {type: "num", data: 3}, {type: "num", data: 4}, {type: "]"}, {type: "]"}, {type: "."}, {type: "."}, {type: "name", data: "print"}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: "."}];
+//let tokens = [{type: "for"}, {type: "name", data: "ls"}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: "."}, {type: "["}, {type: "["}, {type: "num", data: 1}, {type: "num", data: 2}, {type: "]"}, {type: "["}, {type: "num", data: 3}, {type: "num", data: 4}, {type: "]"}, {type: "]"}, {type: "."}, {type: "."}, {type: "name", data: "print"}, {type: "name", data: "x"}, {type: "name", data: "y"}, {type: "."}];
 
 //tokens = "+".split(".(..).").map(type => ({type}));
 
@@ -606,7 +608,9 @@ function parse_cdot(tokens) {
 // 3 + ~
 //tokens = [{type: "num"}, {type: "+"}, {type: "~"}];
 
-//tokens = "~~n+n*~n".split("").map(type => type != "n" ? {type} : {type: "num"});
+//let tokens = "~~n+n*~n".split("").map(type => type != "n" ? {type} : {type: "num"});
 
-console.log(JSON.stringify(parse_cdot(tokens)));
-//console.log(parse_cdot(tokens));
+//console.log(JSON.stringify(parse(tokens)));
+//console.log(parse(tokens));
+
+module.exports = parse;
