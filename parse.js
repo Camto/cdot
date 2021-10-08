@@ -16,7 +16,7 @@ let bin_op_table = [
 
 let un_ops = ["~", "!"];
 
-let built_in_funcs = ["ls", "sqrt", "map", "prod", "print", "sum"];
+let built_in_funcs = ["ls", "sqrt", "map", "prod", "print", "sum", "pop", "push", "void", "len"];
 
 let built_in_vars = ["true", "false"];
 
@@ -50,7 +50,7 @@ function parse(tokens) {
 			if(found) return {kind: found.kind, i: bound.length - 1 - i};
 			else return null;
 		})[0] ||
-		(() => {throw "not a name, bro"})();
+		(() => {throw `${name} ain't a name, bro`})();
 	
 	function done(in_semiparens, i = 0) {
 		if(tokens.length <= i) return true;

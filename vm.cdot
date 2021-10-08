@@ -8,8 +8,8 @@ code = [PUSH 3 PUSH REG_A MOV PUSH REG_A R_INC PUSH REG_A R_PUSH],
 
 fn get_byte (code @ vm_ip),
 fn next_byte (vm_ip <- vm_ip + 1),
-fn vm_pop (pop \vm_stack),
-fn vm_push (push \vm_stack),
+fn vm_pop (pop $vm_stack),
+fn vm_push (push $vm_stack),
 
 vm_do_instr = (
 	instr = get_byte,
