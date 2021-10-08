@@ -3,8 +3,22 @@
 let keywords = [
 	"fn", "store", "args",
 	"if", "elif", "else",
-	"for", "while", "repeat"
+	"for", "while", "repeat",
+	// Operator equivalents
+	"p", "m", "n", "t", "d", "e", "mod", "div",
+	"to", "at",
+	"eq", "ne", "lt", "gt", "le", "ge",
+	"and", "or", "not",
+	"is", "set"
 ];
+
+let op_keywords = {
+	p: "+", m: "-", n: "~", t: "*", d: "/", e: "^", mod: "%", div: "%%",
+	to: "..", at: "@",
+	eq: "==", ne: "!=", lt: "<", gt: ">", le: "<=", ge: ">=",
+	and: "&", or: "|", not: "!",
+	is: "=", set: "<-"
+};
 
 let long_ops = ["<-", "%%", "..", "<=", ">=", "==", "!="];
 
@@ -30,15 +44,18 @@ function lex(prog) {
 	function expect_sym() {
 		let end = i + 1;
 		
-		while(/[A-Za-z_0-9]/.test(prog[end]) && end < prog.length)
+		while(/[A-Za-z_]/.test(prog[end]) && end < prog.length)
 			end++;
 		
 		let sym = prog.substring(i, end);
 		i = end;
 		
-		if(keywords.includes(sym))
-			return {type: sym};
-		else
+		if(keywords.includes(sym)) {
+			if(op_keywords[sym])
+				return {type: op_keywords[sym]};
+			else
+				return {type: sym};
+		} else
 			return {type: "name", data: sym};
 	}
 	
