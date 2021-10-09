@@ -33,8 +33,10 @@ function lex(prog) {
 			tokens.push(expect_num());
 		else if(['"', "'"].includes(prog[i]))
 			tokens.push(expect_str());
-		else if(",.=()[]{}<>$?^*/%+@!&|~".split("").includes(prog[i]))
+		else if(",.=()[]{}<>$^*/%+@!&|~".split("").includes(prog[i]))
 			tokens.push(expect_op());
+		else if(prog[i] == "?")
+			tokens.push(expect_q());
 		else
 			i++;
 	}
@@ -47,10 +49,12 @@ function lex(prog) {
 		while(/[A-Za-z_]/.test(prog[end]) && end < prog.length)
 			end++;
 		
-		let sym = prog.substring(i, end);
+		let sym = prog.substring(i, end).replaceAll("_", "").toLowerCase();
 		i = end;
 		
-		if(keywords.includes(sym)) {
+		if(/^q+$/.test(sym))
+			return {type: "?", n: sym.length};
+		else if(keywords.includes(sym)) {
 			if(op_keywords[sym])
 				return {type: op_keywords[sym]};
 			else
@@ -124,6 +128,12 @@ function lex(prog) {
 			i++;
 			return {type: prog[i - 1]};
 		}
+	}
+	
+	function expect_q() {
+		let n = 1;
+		while(prog[++i] == "?") n++;
+		return {type: "?", n};
 	}
 }
 
