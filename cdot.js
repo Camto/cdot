@@ -11,6 +11,6 @@ function cdot(prog) {
 	return run(ast);
 }
 
-let p = `1p2`;
+let p = `10..~10`;
 
 console.log(JSON.stringify(cdot(p), null, "\t"));

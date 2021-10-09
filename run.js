@@ -28,7 +28,11 @@ function run_expr(expr) {
 		case "num":
 			return expr;
 		default:
-			return std.ops[expr.type](expr);
+			let op = std.ops[expr.type];
+			if(expr.left)
+				return op(run_expr(expr.left), run_expr(expr.right));
+			else
+				return op(run_expr(expr.arg));
 	}
 }
 
