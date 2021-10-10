@@ -44,6 +44,8 @@ function parse(tokens) {
 		...built_in_funcs.map(name => ({kind: "func", name}))
 	]];
 	
+	let sets_qs_stack = [];
+	
 	let find_bound_named = name =>
 		bound.map_maybe((scope, i) => {
 			let found = scope.find(var_or_func => var_or_func.name == name);
@@ -61,7 +63,7 @@ function parse(tokens) {
 			in_semiparens && first.type == ".");
 	}
 	
-	function parse_rec(in_semiparens, new_scope = []) {
+	function parse_rec(in_semiparens, inherit_q = false, new_scope = []) {
 		bound.unshift(new_scope);
 		
 		let pipe_sections = [];
@@ -69,8 +71,9 @@ function parse(tokens) {
 				!done(in_semiparens) ||
 				tokens.length > 0 && tokens[0].type == ",") {
 			
-			pipe_sections.push(parse_pipe_section(in_semiparens));
+			pipe_sections.push(parse_pipe_section(in_semiparens, inherit_q));
 			if(tokens.length > 0 && tokens[0].type == ",") tokens.shift();
+			inherit_q = false;
 		}
 		
 		bound.shift();
@@ -78,7 +81,7 @@ function parse(tokens) {
 		return pipe_sections;
 	}
 	
-	function parse_pipe_section(in_semiparens) {
+	function parse_pipe_section(in_semiparens, inherit_q = false) {
 		let first = tokens.shift();
 		switch(first.type) {
 			case "fn": return parse_fn(in_semiparens);
@@ -89,11 +92,11 @@ function parse(tokens) {
 			
 			default:
 				tokens.unshift(first);
-				return parse_normal(in_semiparens);
+				return parse_normal(in_semiparens, inherit_q);
 		}
 	}
 	
-	function parse_normal(in_semiparens) {
+	function parse_normal(in_semiparens, inherit_q) {
 		let {vars, declared, i} = lookahead_vars(in_semiparens);
 		let var_op;
 		if(
@@ -127,12 +130,20 @@ function parse(tokens) {
 			}
 		}
 		
-		let args = parse_args(in_semiparens);
+		let args, sets_qs;
+		if(inherit_q) {
+			args = parse_args(in_semiparens);
+			sets_qs = false;
+		} else {
+			sets_qs_stack.push(false);
+			args = parse_args(in_semiparens);
+			sets_qs = sets_qs_stack.pop();
+		}
 		
 		if(!var_op)
-			return {type: "call", func, i: scope_i, args};
+			return {type: "call", func, i: scope_i, sets_qs, args};
 		else
-			return {type: var_op, vars, func, i: scope_i, args};
+			return {type: var_op, vars, func, i: scope_i, sets_qs, args};
 	}
 	
 	function parse_vars(in_semiparens) {
@@ -262,7 +273,10 @@ function parse(tokens) {
 		switch(first.type) {
 			case "num":
 			case "str":
+				return first;
+			
 			case "?":
+				sets_qs_stack[sets_qs_stack.length - 1] = true;
 				return first;
 			
 			case "name":
@@ -296,7 +310,7 @@ function parse(tokens) {
 				if(is_func)
 					tokens.shift();
 				
-				let parse = parse_rec(false);
+				let parse = parse_rec(false, true);
 				
 				if(tokens.length > 0 && tokens[0].type == ")")
 					tokens.shift();
@@ -306,7 +320,7 @@ function parse(tokens) {
 				return {type: !is_func ? "expr" : "anonfunc", data: parse};
 			}
 			case "[": {
-				let parse = parse_rec(false);
+				let parse = parse_rec(false, true);
 				
 				if(tokens.length > 0 && tokens[0].type == "]")
 					tokens.shift();
@@ -316,7 +330,7 @@ function parse(tokens) {
 				return {type: "list", data: parse};
 			}
 			case "{": {
-				let parse = parse_rec(false);
+				let parse = parse_rec(false, true);
 				
 				if(tokens.length > 0 && tokens[0].type == "}")
 					tokens.shift();
@@ -332,7 +346,7 @@ function parse(tokens) {
 				if(is_func)
 					tokens.shift();
 				
-				let parse = parse_rec(true);
+				let parse = parse_rec(true, true);
 				
 				if(tokens.length > 0 && tokens[0].type == ".")
 					tokens.shift();
@@ -507,7 +521,7 @@ function parse(tokens) {
 		
 		let block;
 		if(open == "(") {
-			block = parse_rec(false, declared);
+			block = parse_rec(false, false, declared);
 			
 			if(tokens.length > 0 && tokens[0].type == ")")
 				tokens.shift();
@@ -516,7 +530,7 @@ function parse(tokens) {
 		} else if(open == ".") {
 			if(in_semiparens) throw "how?";
 			
-			block = parse_rec(true, declared);
+			block = parse_rec(true, false, declared);
 			
 			if(tokens.length > 0 && tokens[0].type == ".")
 				tokens.shift();
